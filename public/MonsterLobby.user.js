@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.3.0
+// @version 1.4.0
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -83,9 +83,19 @@ function GM_XHR() {
                     that[k] = rsp[k];
                 }
                 // now we call onreadystatechange
-                that.onreadystatechange();
+                //that.onreadystatechange();
                 console.log(that);
                 that.onload(rsp);
+            },
+            onreadystatechange: function (rsp) {
+                // Populate wrapper object with returned data
+                // including the Greasemonkey specific "responseHeaders"
+                for (var k in rsp) {
+                    that[k] = rsp[k];
+                }
+                // now we call onreadystatechange
+                //that.onreadystatechange();
+                that.onreadystatechange();
             },
             onerror: function (rsp) {
                 for (var k in rsp) {
@@ -7163,9 +7173,7 @@ function lobbyStart($) {
     console.log(steamName);
     
     var socket = io.connect(server_address, { enablesXDR: false });
-    
-    
-    
+    socket.pingInterval = 2000;
     
     socket.on('connect', function () {
         console.log("connected");
@@ -7175,6 +7183,10 @@ function lobbyStart($) {
         setInterval(function () {
             socket.emit("heartbeat");
         }, 4000);
+    });
+    
+    socket.on('disconnect', function () {
+        lobbyList.html('Disconnected');
     });
     
     socket.on('hello', function (data) {
@@ -7203,18 +7215,27 @@ function lobbyStart($) {
         var chatBar = $('<div class="chatBar" style="height:30px; margin: 5px 10px 10px 10px;"></div>');
         lobbyList.append(chatBar);
         
-        var chatTextBox = $('<input type="text" maxlength="160" id="chatText" style="width:839px;height:100%; color: black;font-family: \'Press Start 2P\',arial,sans-serif;"></input>');
+        var chatTextBox = $('<input type="text" maxlength="160" id="chatText" style="width:839px;height:100%;overflow-y: scroll; color: black;font-family: \'Press Start 2P\',arial,sans-serif;"></input>');
         chatBar.append(chatTextBox);
         
         var chatButton = $('<button id="chatButton">Send</button>');
         chatBar.append(chatButton);
         
-        $(lobbyList).find('#chatButton').click(function () {
+        function sendChat() {
             var tbox = $(lobbyList).find('#chatText');
             var msg = tbox.val();
-            console.log(msg);
             socket.emit('chat', { message: msg });
             tbox.val('');
+        }
+        
+        $(lobbyList).find('#chatButton').click(function () {
+            sendChat();
+        });
+        
+        $(lobbyList).find('#chatText').keyup(function (e) {
+            if (e.keyCode == 13) {
+                sendChat();
+            }
         });
         
         var leaveButton = $(lobbyList).find('.leave');

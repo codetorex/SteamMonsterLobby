@@ -128,6 +128,9 @@ server.sockets.on('connection', function (socket) {
         p.steamName = data.name;
         p.playerSocket = socket;
         socket["player"] = p;
+        if (p['timeout'] !== 'undefined') {
+            clearTimeout(p['timeout']);
+        }
         state.playerJoined(p);
         p.sendHello();
     });
