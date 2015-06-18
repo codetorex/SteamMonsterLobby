@@ -2,6 +2,7 @@
 import player = require("./Player");
 import lobby = require("./Lobby");
 import log = require("./Log");
+import state = require("./State");
 
 export enum LobbyState {
     WaitingPlayers,
@@ -28,6 +29,7 @@ export class Lobby {
             p.leaveLobby();
         }
         
+        state.globalState.updateLobbyDataObject();
 
         this.players.push(p);
         p.playerLobby = this;
@@ -43,7 +45,7 @@ export class Lobby {
         }
 
         p.playerLobby = null;
-
+        state.globalState.updateLobbyDataObject();
         this.queueLobbyUpdate();
     }
 

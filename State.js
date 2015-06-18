@@ -10,7 +10,6 @@ var StateManager = (function () {
     }
     StateManager.prototype.playerJoined = function (p) {
         if (this.players.indexOf(p) > -1) {
-            //log.info("Player reconnected: " + p.steamName);
             return;
         }
         this.players.push(p);
@@ -23,6 +22,7 @@ var StateManager = (function () {
                 this.sendLobbiesToPlayer(p);
             }
         }
+        this.updateLobbyDataObject();
         log.info("Lobby created: " + l.name);
     };
     // security problem: we are not verifying if client is correctly sent his steamid

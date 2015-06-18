@@ -16,7 +16,7 @@
 
 console.log("TESTINGGG");
 
-//var server_address = 'http://localhost:3700';
+// var server_address = 'http://localhost:3700';
 var server_address = 'http://188.166.36.23:3700';
 
 // GreaseMonkey Insecure XMLHttpRequest wrapper
@@ -7172,12 +7172,12 @@ function lobbyStart($) {
     });
     
     socket.on('hello', function (data) {
-        console.log("player joined to server, requesting lobbies");
+        console.log("player joined to server");
         if (data.alreadyInLobby) {
             joinedLobby(data);
         }
         else {
-            socket.emit('updateLobbies');
+            updateLobbies(data);
         }
     });
     
@@ -7193,7 +7193,7 @@ function lobbyStart($) {
         });
     }
     
-    socket.on('updateLobbies', function (data) {
+    function updateLobbies(data) {
         console.log("lobbies received");
         lobbyList.empty();
         
@@ -7229,7 +7229,9 @@ function lobbyStart($) {
 				catch (e) {
             console.log(e);
         }
-    });
+    }
+    
+    socket.on('updateLobbies', updateLobbies);
     
     socket.on('updateCurrentLobby', function (data) {
         var stat = $(lobbyList).find('.lobbystats');

@@ -1,4 +1,5 @@
 var log = require("./Log");
+var state = require("./State");
 (function (LobbyState) {
     LobbyState[LobbyState["WaitingPlayers"] = 0] = "WaitingPlayers";
     LobbyState[LobbyState["JoiningGame"] = 1] = "JoiningGame";
@@ -16,6 +17,7 @@ var Lobby = (function () {
         if (p.playerLobby != null && p.playerLobby != this) {
             p.leaveLobby();
         }
+        state.globalState.updateLobbyDataObject();
         this.players.push(p);
         p.playerLobby = this;
         this.queueLobbyUpdate();
@@ -27,6 +29,7 @@ var Lobby = (function () {
             this.players.splice(i, 1);
         }
         p.playerLobby = null;
+        state.globalState.updateLobbyDataObject();
         this.queueLobbyUpdate();
     };
     // waits 1 second so quickly joining and leaving lobbies will not lag people

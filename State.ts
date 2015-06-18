@@ -14,7 +14,6 @@ export class StateManager {
 
     public playerJoined(p: player.Player) {
         if (this.players.indexOf(p) > -1) {
-            //log.info("Player reconnected: " + p.steamName);
             return;
         }
         this.players.push(p);
@@ -29,6 +28,7 @@ export class StateManager {
                 this.sendLobbiesToPlayer(p);
             }
         }
+        this.updateLobbyDataObject();
         log.info("Lobby created: " + l.name);
     }
 

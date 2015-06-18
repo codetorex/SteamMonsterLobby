@@ -2,6 +2,7 @@
 
 import io = require('socket.io');
 import lobby = require("./Lobby");
+import state = require("./State");
 
 export class Player {
     public steamName: string;
@@ -36,7 +37,7 @@ export class Player {
             for (var k in lobbyData) helloData[k] = lobbyData[k];
         }
         else {
-
+            for (var k in lobbyData) state.globalState.lobbyData[k] = lobbyData[k];
         }
 
         this.playerSocket.emit("hello", helloData);
