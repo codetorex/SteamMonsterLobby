@@ -1,5 +1,7 @@
+/// <reference path="typings/validator/validator.d.ts" />
 var log = require("./Log");
 var state = require("./State");
+var validator = require('validator');
 (function (LobbyState) {
     LobbyState[LobbyState["WaitingPlayers"] = 0] = "WaitingPlayers";
     LobbyState[LobbyState["JoiningGame"] = 1] = "JoiningGame";
@@ -17,10 +19,23 @@ var Lobby = (function () {
         if (p.playerLobby != null && p.playerLobby != this) {
             p.leaveLobby();
         }
-        state.globalState.updateLobbyDataObject();
         this.players.push(p);
         p.playerLobby = this;
-        this.queueLobbyUpdate();
+        state.globalState.updateLobbyDataObject();
+    };
+    Lobby.prototype.broadcastChatMessage = function (p, message) {
+        if (message.length > 160) {
+            message = message.substring(0, 160);
+        }
+        var escapedName = validator.escape(p.steamName);
+        var escapedMessage = validator.escape(message);
+        var msg = { user: escapedName, message: escapedMessage };
+        for (var i = 0; i < this.players.length; i++) {
+            var curPlayer = this.players[i];
+            if (curPlayer.playerSocket == null)
+                continue;
+            curPlayer.playerSocket.emit('chat', msg);
+        }
     };
     Lobby.prototype.leavePlayer = function (p) {
         log.info("Player " + p.steamName + " leaved lobby " + this.name);
@@ -30,26 +45,6 @@ var Lobby = (function () {
         }
         p.playerLobby = null;
         state.globalState.updateLobbyDataObject();
-        this.queueLobbyUpdate();
-    };
-    // waits 1 second so quickly joining and leaving lobbies will not lag people
-    Lobby.prototype.queueLobbyUpdate = function () {
-        if (this.updateTimer != null) {
-            return;
-        }
-        var me = this;
-        this.updateTimer = setTimeout(function () {
-            me.updateLobbyInfo();
-        }, 1000);
-    };
-    // sends current player counts to players
-    Lobby.prototype.updateLobbyInfo = function () {
-        for (var i = 0; i < this.players.length; i++) {
-            var curPlayer = this.players[i];
-            if (curPlayer.playerSocket == null)
-                continue;
-            curPlayer.playerSocket.emit("updateCurrentLobby", { count: this.players.length, limit: this.limit });
-        }
     };
     Lobby.prototype.joinGame = function (gameid) {
         if (this.lobbyStatus != 0 /* WaitingPlayers */) {

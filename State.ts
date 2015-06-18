@@ -58,12 +58,19 @@ export class StateManager {
     }
 
     public joinPlayerToLobby(p: player.Player, l: lobby.Lobby) {
+
+        if (l.players.length >= l.limit) {
+            return false;
+        }
+
         if (p.playerLobby != null && p.playerLobby != l) {
             p.leaveLobby(); // leave current lobby if any
         }
         
         l.joinPlayer(p); // join player to new lobby
         log.info("Player " + p.steamName + " joined to " + l.name);
+
+        return true;
     }
 
     public updateLobbyDataObject() {

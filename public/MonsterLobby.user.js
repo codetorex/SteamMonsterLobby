@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.0.0
+// @version 1.3.0
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -10,6 +10,8 @@
 // @grant GM_xmlhttpRequest
 // @grant GM_addStyle
 // @grant unsafeWindow
+// @updateURL https://raw.githubusercontent.com/codetorex/SteamMonsterLobby/master/public/MonsterLobby.user.js
+// @downloadURL https://raw.githubusercontent.com/codetorex/SteamMonsterLobby/master/public/MonsterLobby.user.js
 // @require     https://cdn.socket.io/socket.io-1.3.5.js
 // @require     https://code.jquery.com/jquery-1.11.3.min.js
 // ==/UserScript==
@@ -7154,7 +7156,7 @@ function lobbyStart($) {
     console.log("Created lobby elements...");
     
     var steamId = unsafeWindow.g_steamID;
-    var steamName = $('#account_pulldown').text();
+    var steamName = $('a.username').text().trim();
     
     
     console.log(steamId);
@@ -7186,10 +7188,37 @@ function lobbyStart($) {
     });
     
     function joinedLobby(data) {
+        var stat = $(lobbyList).find('.lobbystats');
+        if ($('.chat').size() > 0) {
+            stat.text(data.count + '/' + data.limit);
+            return;
+        }
+        
         lobbyList.html('You are in [' + data.name + '] lobby. <span class="lobbystats">' + data.count + '/' + data.limit + '</span>');
         lobbyList.append('<button class="leave">Leave</button>');
         
+        var chat = $('<div class="chat" style="border: 2px solid black; margin: 10px 10px 0px 10px;height:250px; position:relative;"></div>');
+        lobbyList.append(chat);
+        
+        var chatBar = $('<div class="chatBar" style="height:30px; margin: 5px 10px 10px 10px;"></div>');
+        lobbyList.append(chatBar);
+        
+        var chatTextBox = $('<input type="text" maxlength="160" id="chatText" style="width:839px;height:100%; color: black;font-family: \'Press Start 2P\',arial,sans-serif;"></input>');
+        chatBar.append(chatTextBox);
+        
+        var chatButton = $('<button id="chatButton">Send</button>');
+        chatBar.append(chatButton);
+        
+        $(lobbyList).find('#chatButton').click(function () {
+            var tbox = $(lobbyList).find('#chatText');
+            var msg = tbox.val();
+            console.log(msg);
+            socket.emit('chat', { message: msg });
+            tbox.val('');
+        });
+        
         var leaveButton = $(lobbyList).find('.leave');
+        leaveButton.off('click');
         
         leaveButton.click(function () {
             console.log("leaving lobby");
@@ -7238,26 +7267,17 @@ function lobbyStart($) {
     
     socket.on('updateLobbies', updateLobbies);
     
-    socket.on('updateCurrentLobby', function (data) {
-        var stat = $(lobbyList).find('.lobbystats');
-        stat.text(data.count + '/' + data.limit);
-    });
-    
     socket.on('joinedLobby', joinedLobby);
     
-    
-    socket.on('message', function (data) {
-        if (data.message) {
-            messages.push(data);
-            var html = '';
-            for (var i = 0; i < messages.length; i++) {
-                html += '<b>' + (messages[i].username ? messages[i].username : 'Server') + ': </b>';
-                html += messages[i].message + '<br />';
-            }
-            content.innerHTML = html;
-        } else {
-            console.log("There is a problem:", data);
-        }
+    socket.on('chat', function (data) {
+        if (!data.message) return;
+        
+        var chat = $('.lobbies .chat');
+        console.log(chat);
+        
+        var chatObj = $('<div class="chatmessage"><span class="user">' + data.user + '</span> > ' + data.message + '</div>');
+        
+        chat.append(chatObj);
     });
     
     socket.on('joinGame', function (data) {

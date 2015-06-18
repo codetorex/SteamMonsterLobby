@@ -65,7 +65,7 @@ app.get("/api/logs/:count", needLogin, function (req, res) {
     }
     var result = [];
     result.push("req:" + count + "start:" + start + "end:" + end);
-    for (var i = end - 1; i >= 0; i--) {
+    for (var i = end - 1; i >= start; i--) {
         result.push(i + log.logs[i]);
     }
     res.send(result.join("\n"));
@@ -123,7 +123,6 @@ var io = require('socket.io');
 var appServer = app.listen(port);
 var server = io(appServer, { pingInterval: 5000, allowUpgrades: false, transports: ['polling'] });
 server.sockets.on('connection', function (socket) {
-    log.info("Socket connected " + socket.id);
     socket.on('hello', function (data) {
         var p = state.getOrCreatePlayer(data.id);
         p.steamName = data.name;
@@ -142,8 +141,13 @@ server.sockets.on('connection', function (socket) {
         var p = socket["player"];
         var lobbyId = data.id;
         var lobby = state.getLobbyById(lobbyId);
-        state.joinPlayerToLobby(p, lobby);
-        socket.emit('joinedLobby', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+        var isJoined = state.joinPlayerToLobby(p, lobby);
+        if (isJoined) {
+            socket.emit('joinedLobby', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+        }
+        else {
+            socket.emit('lobbyFull', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+        }
     });
     socket.on('ingame', function (data) {
         var p = state.getSteamPlayer(data.id);
@@ -163,6 +167,12 @@ server.sockets.on('connection', function (socket) {
         ;
     });
     socket.on('chat', function (data) {
+        var p = socket["player"];
+        if (p != null) {
+            if (p.playerLobby != null) {
+                p.playerLobby.broadcastChatMessage(p, data.message);
+            }
+        }
     });
     socket.on('heartbeat', function (data) {
         var p = socket["player"];

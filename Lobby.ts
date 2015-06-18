@@ -1,8 +1,11 @@
-﻿
+﻿/// <reference path="typings/validator/validator.d.ts" />
+
 import player = require("./Player");
 import lobby = require("./Lobby");
 import log = require("./Log");
 import state = require("./State");
+
+import validator = require('validator');
 
 export enum LobbyState {
     WaitingPlayers,
@@ -28,13 +31,27 @@ export class Lobby {
         if (p.playerLobby != null && p.playerLobby != this ) {
             p.leaveLobby();
         }
-        
-        state.globalState.updateLobbyDataObject();
-
+       
         this.players.push(p);
         p.playerLobby = this;
+        state.globalState.updateLobbyDataObject();
+    }
 
-        this.queueLobbyUpdate();
+    public broadcastChatMessage(p: player.Player, message: string) {
+        if (message.length > 160) {
+            message = message.substring(0, 160);
+        }
+
+        var escapedName = validator.escape(p.steamName);
+        var escapedMessage = validator.escape(message);
+        var msg = { user: escapedName, message: escapedMessage };
+
+        for (var i = 0; i < this.players.length; i++) {
+            var curPlayer: player.Player = this.players[i];
+            if (curPlayer.playerSocket == null) continue;
+            
+            curPlayer.playerSocket.emit('chat',  msg);
+        }
     }
 
     public leavePlayer(p: player.Player) {
@@ -46,31 +63,8 @@ export class Lobby {
 
         p.playerLobby = null;
         state.globalState.updateLobbyDataObject();
-        this.queueLobbyUpdate();
     }
 
-
-    // waits 1 second so quickly joining and leaving lobbies will not lag people
-    public queueLobbyUpdate() {
-        if (this.updateTimer != null) {
-            return;
-        }
-
-        var me = this;
-
-        this.updateTimer = setTimeout(function () {
-            me.updateLobbyInfo();
-        }, 1000);
-    }
-
-    // sends current player counts to players
-    public updateLobbyInfo() {
-        for (var i = 0; i < this.players.length; i++) {
-            var curPlayer: player.Player = this.players[i];
-            if (curPlayer.playerSocket == null) continue;
-            curPlayer.playerSocket.emit("updateCurrentLobby", {count: this.players.length, limit: this.limit});
-        }
-    }
 
     public joinGame(gameid) {
         if (this.lobbyStatus != LobbyState.WaitingPlayers) {

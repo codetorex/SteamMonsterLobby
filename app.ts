@@ -98,7 +98,7 @@ app.get("/api/logs/:count", needLogin, function (req, res) {
 
     result.push( "req:" + count + "start:" + start + "end:" + end );
 
-    for (var i = end-1; i >= 0; i--) {
+    for (var i = end-1; i >= start; i--) {
         result.push( i +  log.logs[i]);
     }
 
@@ -176,8 +176,6 @@ var server = io(appServer, { pingInterval: 5000, allowUpgrades: false, transport
 
 server.sockets.on('connection', function (socket) {
 
-    log.info("Socket connected " + socket.id);
-
     socket.on('hello', function (data) {
         var p = state.getOrCreatePlayer(data.id);
         p.steamName = data.name;
@@ -199,9 +197,14 @@ server.sockets.on('connection', function (socket) {
         var p = socket["player"];
         var lobbyId = data.id;
         var lobby = state.getLobbyById(lobbyId);
-        state.joinPlayerToLobby(p, lobby);
+        var isJoined = state.joinPlayerToLobby(p, lobby);
 
-        socket.emit('joinedLobby', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+        if (isJoined) {
+            socket.emit('joinedLobby', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+        }
+        else {
+            socket.emit('lobbyFull', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+        }
     });
 
     socket.on('ingame', function (data) {
@@ -227,7 +230,12 @@ server.sockets.on('connection', function (socket) {
     });
 
     socket.on('chat', function (data) {
-
+        var p: player.Player = socket["player"];
+        if (p != null) {
+            if (p.playerLobby != null) {
+                p.playerLobby.broadcastChatMessage(p, data.message);
+            }
+        }
     });
 
     socket.on('heartbeat', function (data) {
