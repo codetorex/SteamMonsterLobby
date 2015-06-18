@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.4.0
+// @version 1.4.5
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -31,10 +31,11 @@ function GM_XHR() {
     this.status = null;
     this.headers = {};
     this.readyState = null;
-    this.onload = function () { }
-    
+    this.onload = function (res) { }
+    this.ontimeout = function (res) { }
     this.onreadystatechange = function () { }
-    
+    this.onerror = function (res) { }
+    this.onabort = function (res) { }
     
     
     this.abort = function () {
@@ -76,6 +77,13 @@ function GM_XHR() {
             url: this.url,
             headers: this.headers,
             data: this.data,
+            ontimeout: function (rsp) {
+                for (var k in rsp) {
+                    that[k] = rsp[k];
+                }
+                console.log('CONNECTION TIMEOUT'); console.log(rsp);
+                that.ontimeout(rsp);
+            },
             onload: function (rsp) {
                 // Populate wrapper object with returned data
                 // including the Greasemonkey specific "responseHeaders"
@@ -83,8 +91,9 @@ function GM_XHR() {
                     that[k] = rsp[k];
                 }
                 // now we call onreadystatechange
-                //that.onreadystatechange();
-                console.log(that);
+                that.onreadystatechange(rsp);
+                //console.log(that);
+                console.log('CONNECTION LOAD'); console.log(rsp);
                 that.onload(rsp);
             },
             onreadystatechange: function (rsp) {
@@ -95,12 +104,22 @@ function GM_XHR() {
                 }
                 // now we call onreadystatechange
                 //that.onreadystatechange();
-                that.onreadystatechange();
+                console.log('CONNECTION STATECHANGE'); console.log(rsp);
+                that.onreadystatechange(rsp);
+            },
+            onabort: function (rsp) {
+                for (var k in rsp) {
+                    that[k] = rsp[k];
+                }
+                console.log('CONNECTION ABORTED'); console.log(rsp);
+                that.onabort(rsp);
             },
             onerror: function (rsp) {
                 for (var k in rsp) {
                     that[k] = rsp[k];
                 }
+                console.log('CONNECTION ERROR'); console.log(rsp);
+                that.onerror(rsp);
             }
         });
     };
@@ -7172,7 +7191,7 @@ function lobbyStart($) {
     console.log(steamId);
     console.log(steamName);
     
-    var socket = io.connect(server_address, { enablesXDR: false });
+    var socket = io.connect(server_address);
     socket.pingInterval = 2000;
     
     socket.on('connect', function () {
@@ -7185,8 +7204,14 @@ function lobbyStart($) {
         }, 4000);
     });
     
+    socket.on('error', function (res) {
+        console.log('ERROR');
+        console.log(res);
+    });
+    
     socket.on('disconnect', function () {
-        lobbyList.html('Disconnected');
+        alert('disconnected');
+        $('.monsterlobby').html('Disconnected');
     });
     
     socket.on('hello', function (data) {

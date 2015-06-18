@@ -73,7 +73,7 @@ var StateManager = (function () {
         }
     };
     StateManager.prototype.queuePlayerDisconnected = function (p) {
-        if (p['timeout'] !== 'undefined' && p['timeout'] !== null) {
+        if (p['timeout'] !== 'undefined') {
             clearTimeout(p['timeout']);
             p['timeout'] = null;
         }

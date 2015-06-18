@@ -122,6 +122,7 @@ function checkLogin(req) {
 var io = require('socket.io');
 var appServer = app.listen(port);
 var server = io(appServer, { pingInterval: 5000, allowUpgrades: false, transports: ['polling'] });
+//var server = io.listen(37005, { pingInterval: 5000, allowUpgrades: false, transports: ['polling'] });
 server.sockets.on('connection', function (socket) {
     socket.on('hello', function (data) {
         var p = state.getOrCreatePlayer(data.id);
@@ -186,6 +187,9 @@ server.sockets.on('connection', function (socket) {
             p.lastHeartBeat = cur.getTime();
         }
         p.sendHello();
+    });
+    socket.on('error', function (reason) {
+        console.log(reason);
     });
     socket.on('disconnect', function () {
         var p = socket["player"];
