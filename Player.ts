@@ -38,7 +38,8 @@ export class Player {
         }
         else {
             var lobbyData2 = state.globalState.lobbyData;
-            for (var k in lobbyData2) helloData[k] = lobbyData2[k];
+            helloData.lobbies = state.globalState.lobbyData;
+            //for (var k in lobbyData2) helloData[k] = lobbyData2[k];
         }
 
         this.playerSocket.emit("hello", helloData);
