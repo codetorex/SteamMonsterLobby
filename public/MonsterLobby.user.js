@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.1.0
+// @version 1.0.0
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -10,16 +10,13 @@
 // @grant GM_xmlhttpRequest
 // @grant GM_addStyle
 // @grant unsafeWindow
-// @updateURL https://raw.githubusercontent.com/codetorex/SteamMonsterLobby/master/public/MonsterLobby.user.js
-// @downloadURL https://raw.githubusercontent.com/codetorex/SteamMonsterLobby/master/public/MonsterLobby.user.js
 // @require     https://cdn.socket.io/socket.io-1.3.5.js
 // @require     https://code.jquery.com/jquery-1.11.3.min.js
 // ==/UserScript==
 
-
 console.log("TESTINGGG");
 
-// var server_address = 'http://localhost:3700';
+//var server_address = 'http://localhost:3700';
 var server_address = 'http://188.166.36.23:3700';
 
 // GreaseMonkey Insecure XMLHttpRequest wrapper
@@ -5421,7 +5418,7 @@ var WebSocket = global.WebSocket || global.MozWebSocket;
  * Module exports.
  */
 
-module.exports = null; //WebSocket ? ws : null;
+module.exports = WebSocket ? ws : null;
                 
                 /**
  * WebSocket constructor.
@@ -7172,6 +7169,10 @@ function lobbyStart($) {
         console.log("connected");
         // send user info
         socket.emit('hello', { id: steamId, name: steamName });
+        
+        setInterval(function () {
+            socket.emit("heartbeat");
+        }, 4000);
     });
     
     socket.on('hello', function (data) {
