@@ -130,6 +130,8 @@ server.sockets.on('connection', function (socket) {
         socket["player"] = p;
         if (p['timeout'] !== 'undefined') {
             clearTimeout(p['timeout']);
+            p['timeout'] = null;
+            delete p['timeout'];
         }
         state.playerJoined(p);
         p.sendHello();

@@ -98,8 +98,9 @@ export class StateManager {
 
     public queuePlayerDisconnected(p: player.Player) {
 
-        if (p['timeout'] !== 'undefined') {
+        if (p['timeout'] !== 'undefined' && p['timeout'] !== null ) {
             clearTimeout(p['timeout']);
+            p['timeout'] = null;
         }
 
         var me = this;

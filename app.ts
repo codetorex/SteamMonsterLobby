@@ -184,6 +184,8 @@ server.sockets.on('connection', function (socket) {
 
         if (p['timeout'] !== 'undefined') {
             clearTimeout(p['timeout']);
+            p['timeout'] = null;
+            delete p['timeout'];
         }
 
         state.playerJoined(p);
