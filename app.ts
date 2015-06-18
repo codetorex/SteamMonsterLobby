@@ -12,6 +12,8 @@ var port = 3700;
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 
+var config = require('./lobby_config');
+
 
 app.set('views', __dirname + '/tpl');
 app.set('view engine', "jade");
@@ -103,7 +105,7 @@ app.get("/api/logs/:count", needLogin, function (req, res) {
 
 
 app.post("/api/login", function (req, res) {
-    if (req.body.password == "CRHts5qewCIhVlPP") {
+    if (req.body.password == config.adminPassword) {
         var sessionStr = randomStr(16);
         res.cookie("session", sessionStr);
         sessions[sessionStr] = { login: true, ip: req.ip };

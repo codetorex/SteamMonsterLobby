@@ -16,6 +16,7 @@
 
 console.log("TESTINGGG");
 
+var server_address = 'http://104.156.229.38:3700';
 
 // GreaseMonkey Insecure XMLHttpRequest wrapper
 function GM_XHR() {
@@ -7158,7 +7159,7 @@ function lobbyStart($) {
     console.log(steamId);
     console.log(steamName);
     
-    var socket = io.connect('http://localhost:3700', { enablesXDR: false });
+    var socket = io.connect(server_address, { enablesXDR: false });
     
     
     
@@ -7278,7 +7279,7 @@ function gameInformer($) {
     
     console.log("Game join informer start...");
     
-    var socket = io.connect('http://localhost:3700', { enablesXDR: false });
+    var socket = io.connect(server_address, { enablesXDR: false });
     
     var steamId = unsafeWindow.g_steamID;
     var gameId = unsafeWindow.g_GameID;
