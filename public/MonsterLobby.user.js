@@ -7199,6 +7199,7 @@ function lobbyStart($) {
         
         var lobbies = data.lobbies;
         
+        console.log(data);
         console.log(lobbies);
         if (lobbies.length == 0) {
             lobbyList.text("no lobbies found yet");
