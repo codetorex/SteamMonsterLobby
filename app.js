@@ -162,6 +162,16 @@ server.sockets.on('connection', function (socket) {
     });
     socket.on('chat', function (data) {
     });
+    socket.on('heartbeat', function (data) {
+        var p = socket["player"];
+        if (p != null) {
+            var cur = new Date();
+            p.lastHeartBeat = cur.getTime();
+        }
+        if (p.playerLobby != null) {
+            p.sendHello();
+        }
+    });
     socket.on('disconnect', function () {
         var p = socket["player"];
         if (p != null) {

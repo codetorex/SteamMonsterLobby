@@ -7,7 +7,7 @@ export class Player {
     public steamName: string;
     public steamId: string;
 
-    public lastHeartBeat: Date;
+    public lastHeartBeat: number;
 
     public playerSocket: SocketIO.Socket;
     public playerLobby: lobby.Lobby = null; // each player can only have one lobby
@@ -34,6 +34,9 @@ export class Player {
             var lobby = this.playerLobby;
             var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length };
             for (var k in lobbyData) helloData[k] = lobbyData[k];
+        }
+        else {
+
         }
 
         this.playerSocket.emit("hello", helloData);

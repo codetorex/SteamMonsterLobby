@@ -1,4 +1,4 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
@@ -16,7 +16,8 @@
 
 console.log("TESTINGGG");
 
-var server_address = 'http://104.156.229.38:3700';
+//var server_address = 'http://localhost:3700';
+var server_address = 'http://188.166.36.23:3700';
 
 // GreaseMonkey Insecure XMLHttpRequest wrapper
 function GM_XHR() {
@@ -3410,7 +3411,7 @@ Polling.prototype.uri = function () {
                     
                     // cache busting is forced
                     if (false !== this.timestampRequests) {
-                        query[this.timestampParam] = +new Date + '-' + Transport.timestamps++;
+                        query[this.timestampParam] = +new Date+ '-' + Transport.timestamps++;
                     }
                     
                     if (!this.supportsBinary && !query.sid) {
@@ -7152,7 +7153,7 @@ function lobbyStart($) {
     
     console.log("Created lobby elements...");
     
-    var steamId = window.g_steamID;
+    var steamId = unsafeWindow.g_steamID;
     var steamName = $('#account_pulldown').text();
     
     

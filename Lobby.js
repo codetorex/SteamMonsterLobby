@@ -1,3 +1,4 @@
+var log = require("./Log");
 (function (LobbyState) {
     LobbyState[LobbyState["WaitingPlayers"] = 0] = "WaitingPlayers";
     LobbyState[LobbyState["JoiningGame"] = 1] = "JoiningGame";
@@ -12,12 +13,15 @@ var Lobby = (function () {
         this.lobbyStatus = 0 /* WaitingPlayers */;
     }
     Lobby.prototype.joinPlayer = function (p) {
-        p.leaveLobby();
+        if (p.playerLobby != null && p.playerLobby != this) {
+            p.leaveLobby();
+        }
         this.players.push(p);
         p.playerLobby = this;
         this.queueLobbyUpdate();
     };
     Lobby.prototype.leavePlayer = function (p) {
+        log.info("Player " + p.steamName + " leaved lobby " + this.name);
         var i = this.players.indexOf(p);
         if (i != -1) {
             this.players.splice(i, 1);

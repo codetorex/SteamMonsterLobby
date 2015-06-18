@@ -7,20 +7,28 @@ export class StateManager {
     public lobbies: lobby.Lobby[] = [];
     public players: player.Player[] = [];
 
+    public lobbyData: any = null;
+
     // steam id to player dictionary
     public steamPlayer = {};
 
     public playerJoined(p: player.Player) {
         if (this.players.indexOf(p) > -1) {
-            log.info("Player reconnected: " + p.steamName);
+            //log.info("Player reconnected: " + p.steamName);
             return;
         }
         this.players.push(p);
-        log.info("Player connected: " + p.steamName);
+        log.info("Player connected: " + p.steamName + " SteamId:" + p.steamId);
     }
 
     public lobbyCreated(l: lobby.Lobby) {
         this.lobbies.push(l);
+
+        for (var p in this.players) {
+            if (p.playerLobby != null) {
+                this.sendLobbiesToPlayer(p);
+            }
+        }
         log.info("Lobby created: " + l.name);
     }
 
@@ -34,8 +42,6 @@ export class StateManager {
             this.steamPlayer[steamid] = p;
             return p;
         }
-
-        
 
         return k;
     }
@@ -56,12 +62,15 @@ export class StateManager {
     }
 
     public joinPlayerToLobby(p: player.Player, l: lobby.Lobby) {
-        p.leaveLobby(); // leave current lobby if any
+        if (p.playerLobby != null && p.playerLobby != l) {
+            p.leaveLobby(); // leave current lobby if any
+        }
+        
         l.joinPlayer(p); // join player to new lobby
         log.info("Player " + p.steamName + " joined to " + l.name);
     }
 
-    public sendLobbiesToPlayer(p: player.Player) {
+    public updateLobbyDataObject() {
         var lobbyList = [];
         for (var i = 0; i < this.lobbies.length; i++) {
             var curLobby: lobby.Lobby = this.lobbies[i];
@@ -73,7 +82,14 @@ export class StateManager {
             });
         }
 
-        p.playerSocket.emit('updateLobbies', { lobbies: lobbyList });
+        this.lobbyData = lobbyList;
+    }
+
+    public sendLobbiesToPlayer(p: player.Player) {
+
+        if (p.playerSocket != null) {
+            p.playerSocket.emit('updateLobbies', { lobbies: this.lobbyData });
+        }
     }
 
 

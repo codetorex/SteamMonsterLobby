@@ -4,19 +4,25 @@ var StateManager = (function () {
     function StateManager() {
         this.lobbies = [];
         this.players = [];
+        this.lobbyData = null;
         // steam id to player dictionary
         this.steamPlayer = {};
     }
     StateManager.prototype.playerJoined = function (p) {
         if (this.players.indexOf(p) > -1) {
-            log.info("Player reconnected: " + p.steamName);
+            //log.info("Player reconnected: " + p.steamName);
             return;
         }
         this.players.push(p);
-        log.info("Player connected: " + p.steamName);
+        log.info("Player connected: " + p.steamName + " SteamId:" + p.steamId);
     };
     StateManager.prototype.lobbyCreated = function (l) {
         this.lobbies.push(l);
+        for (var p in this.players) {
+            if (p.playerLobby != null) {
+                this.sendLobbiesToPlayer(p);
+            }
+        }
         log.info("Lobby created: " + l.name);
     };
     // security problem: we are not verifying if client is correctly sent his steamid
@@ -43,11 +49,13 @@ var StateManager = (function () {
         return this.steamPlayer[steamid];
     };
     StateManager.prototype.joinPlayerToLobby = function (p, l) {
-        p.leaveLobby(); // leave current lobby if any
+        if (p.playerLobby != null && p.playerLobby != l) {
+            p.leaveLobby(); // leave current lobby if any
+        }
         l.joinPlayer(p); // join player to new lobby
         log.info("Player " + p.steamName + " joined to " + l.name);
     };
-    StateManager.prototype.sendLobbiesToPlayer = function (p) {
+    StateManager.prototype.updateLobbyDataObject = function () {
         var lobbyList = [];
         for (var i = 0; i < this.lobbies.length; i++) {
             var curLobby = this.lobbies[i];
@@ -58,7 +66,12 @@ var StateManager = (function () {
                 count: curLobby.players.length,
             });
         }
-        p.playerSocket.emit('updateLobbies', { lobbies: lobbyList });
+        this.lobbyData = lobbyList;
+    };
+    StateManager.prototype.sendLobbiesToPlayer = function (p) {
+        if (p.playerSocket != null) {
+            p.playerSocket.emit('updateLobbies', { lobbies: this.lobbyData });
+        }
     };
     StateManager.prototype.queuePlayerDisconnected = function (p) {
         if (p['timeout'] !== 'undefined') {

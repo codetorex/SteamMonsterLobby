@@ -21,6 +21,8 @@ var Player = (function () {
             for (var k in lobbyData)
                 helloData[k] = lobbyData[k];
         }
+        else {
+        }
         this.playerSocket.emit("hello", helloData);
     };
     Player.prototype.playerMadeIntoGame = function (gameid) {

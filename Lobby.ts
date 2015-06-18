@@ -1,6 +1,7 @@
 ﻿
 import player = require("./Player");
 import lobby = require("./Lobby");
+import log = require("./Log");
 
 export enum LobbyState {
     WaitingPlayers,
@@ -23,7 +24,10 @@ export class Lobby {
     public gameId: any;
 
     public joinPlayer(p: player.Player) {
-        p.leaveLobby();
+        if (p.playerLobby != null && p.playerLobby != this ) {
+            p.leaveLobby();
+        }
+        
 
         this.players.push(p);
         p.playerLobby = this;
@@ -32,6 +36,7 @@ export class Lobby {
     }
 
     public leavePlayer(p: player.Player) {
+        log.info("Player " + p.steamName + " leaved lobby " + this.name);
         var i = this.players.indexOf(p);
         if (i != -1) {
             this.players.splice(i, 1);
