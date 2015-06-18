@@ -13,6 +13,8 @@ var Player = (function () {
         this.playerSocket.emit("joinGame", { id: gameId });
     };
     Player.prototype.sendHello = function () {
+        if (this.playerSocket == null)
+            return;
         var inLobby = this.playerLobby != null;
         var helloData = {};
         helloData.alreadyInLobby = inLobby;

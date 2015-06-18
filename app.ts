@@ -96,8 +96,10 @@ app.get("/api/logs/:count", needLogin, function (req, res) {
     
     var result = [];
 
+    result.push( "req:" + count + "start:" + start + "end:" + end );
+
     for (var i = end-1; i >= 0; i--) {
-        result.push(log.logs[i]);
+        result.push( i +  log.logs[i]);
     }
 
     res.send(result.join("\n"));
@@ -168,7 +170,9 @@ function checkLogin(req: express.Request): boolean {
 
 import io = require('socket.io');
 
-var server = io.listen(app.listen(port));
+var appServer = app.listen(port);
+
+var server = io(appServer, { pingInterval: 5000, allowUpgrades: false, transports :[ 'polling' ]});
 
 server.sockets.on('connection', function (socket) {
 
@@ -231,15 +235,11 @@ server.sockets.on('connection', function (socket) {
         var p: player.Player = socket["player"];
         if (p != null) {
 
-            console.log("Heartbeat received from : " + p.steamName);
-
             var cur = new Date();
             p.lastHeartBeat = cur.getTime();
         }
-
-        if (p.playerLobby != null) {
-            p.sendHello();
-        }
+ 
+       p.sendHello();        
     });
 
     socket.on('disconnect', function () {

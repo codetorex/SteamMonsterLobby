@@ -26,6 +26,8 @@ export class Player {
     }
 
     public sendHello() {
+        if (this.playerSocket == null) return;
+
         var inLobby = this.playerLobby != null;
 
         var helloData:any = {};
