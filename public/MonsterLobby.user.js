@@ -1,4 +1,4 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
@@ -5168,7 +5168,7 @@ function hasBinary(data) {
                                 return continuationByte & 0x3F;
                             }
                             
-                            // If we end up here, it�s not a continuation byte
+                            // If we end up here, it’s not a continuation byte
                             throw Error('Invalid continuation byte');
                         }
                         
