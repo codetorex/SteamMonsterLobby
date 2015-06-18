@@ -23,12 +23,8 @@ export class StateManager {
     public lobbyCreated(l: lobby.Lobby) {
         this.lobbies.push(l);
 
-        for (var p in this.players) {
-            if (p.playerLobby != null) {
-                this.sendLobbiesToPlayer(p);
-            }
-        }
         this.updateLobbyDataObject();
+        
         log.info("Lobby created: " + l.name);
     }
 

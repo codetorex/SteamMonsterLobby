@@ -165,6 +165,7 @@ server.sockets.on('connection', function (socket) {
     socket.on('heartbeat', function (data) {
         var p = socket["player"];
         if (p != null) {
+            console.log("Heartbeat received from : " + p.steamName);
             var cur = new Date();
             p.lastHeartBeat = cur.getTime();
         }

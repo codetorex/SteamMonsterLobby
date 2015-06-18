@@ -17,11 +17,6 @@ var StateManager = (function () {
     };
     StateManager.prototype.lobbyCreated = function (l) {
         this.lobbies.push(l);
-        for (var p in this.players) {
-            if (p.playerLobby != null) {
-                this.sendLobbiesToPlayer(p);
-            }
-        }
         this.updateLobbyDataObject();
         log.info("Lobby created: " + l.name);
     };
