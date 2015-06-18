@@ -1,0 +1,136 @@
+﻿doctype
+html
+	head
+		title= "Reddit Botnet Admin"
+		script(src='http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js')
+		link(rel='stylesheet', href='/style.css')
+		link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css')
+		link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css')
+		script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js')
+	body
+		nav.navbar.navbar-inverse
+			div.container
+				div.navbar-header
+					div.navbar-brand Reddit Botnet Admin Panel
+				ul.nav.navbar-nav
+					li
+						a(href="/") Home
+					li 
+						a Players 
+							span.badge=players.length
+					li 
+						a Lobbies 
+							span.badge=lobbies.length
+
+		div.container
+			div.col-sm-12.well#tools
+				button.btn.btn-lg.btn-default(data-toggle="modal",data-target="#create-lobby-modal")
+					span.glyphicon.glyphicon-plus
+					|  Create Lobby
+					
+			div.col-sm-6
+				h4 Current Lobbies
+				div.list-group.lobbies
+					each lobby in lobbies
+						a.list-group-item.lobby(data-id=lobby.id)
+							h4.list-group-item-heading=lobby.name
+							p.list-group-item-text
+								span=lobby.players.length
+								span &nbsp;/&nbsp;
+								span=lobby.limit
+			
+			div.col-sm-6
+				h4 System Log				
+				pre#logbox.
+					Hello	
+
+			div.col-sm-12.well#lobbyControlPanel(style="display:none;")
+				h4 Lobby Control Panel
+				h4#controlLobbyLabel(style="color:red;") Lobby Name
+				button.btn.btn-lg.btn-default#joinGameButton
+					span.glyphicon.glyphicon-send
+					|  Join Game
+
+		div.modal.fade#create-lobby-modal(tabindex="-1")
+			div.modal-dialog
+				div.modal-content
+					div.modal-header
+						button.close(data-dismiss="modal",aria-label="Close") &times;
+						h4.modal-title Create Lobby
+					div.modal-body
+						form#create-lobby-form(method="post", action="/api/createLobby")
+							div.form-group
+								label Lobby Name
+								input.form-control(name="name", type="text", placeholder="Matrix Lobby")
+							div.form-group
+								label Max Player Count
+								input.form-control(name="limit", type="text", placeholder="1500")
+					div.modal-footer
+						button.btn.btn-default(data-dismiss="modal") Close
+						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Create
+
+		div.modal.fade#join-lobby-modal(tabindex="-1")
+			div.modal-dialog
+				div.modal-content
+					div.modal-header
+						button.close(data-dismiss="modal",aria-label="Close") &times;
+						h4.modal-title Join Game
+					div.modal-body
+						form#create-lobby-form(method="post", action="/api/joinGame")
+							div.form-group
+								label Lobby Name
+								input.form-control#lobbyNameText(name="lobbyname", type="text", value="00000",readonly)
+							div.form-group
+								label Lobby Id
+								input.form-control#lobbyIdText(name="lobbyid", type="text", value="00000",readonly)
+							div.form-group
+								label Game Id
+								input.form-control(name="gameid", type="text", placeholder="00000")
+					div.modal-footer
+						button.btn.btn-default(data-dismiss="modal") Close
+						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Join
+			
+		script.
+			$(document).ready( function(){
+				$('.modal .btn-ok').click(function(){
+					$(this).closest('.modal').find('form').submit();
+				});
+
+				$('.lobbies .lobby').click(function(){
+					$('.lobbies .lobby').removeClass('active');
+					$('#lobbyControlPanel').slideUp();
+
+					var mlobby = $(this).closest('.lobby');
+					mlobby.addClass('active');
+					var lobbyId = mlobby.attr('data-id');
+					var lobbyName = mlobby.find('.list-group-item-heading').text();
+
+
+					$('#lobbyControlPanel').slideDown();
+					var mlabel =$('#controlLobbyLabel');
+					mlabel.text( lobbyName );
+					mlabel.attr('data-id', lobbyId);
+
+
+					$('#joinGameButton').off('click').click(function(){
+						$('#lobbyNameText').attr('value', lobbyName );
+						$('#lobbyIdText').attr('value', lobbyId );
+						$('#join-lobby-modal').modal('show');
+					});
+				});
+
+				
+				
+				var fetching = false;
+				setInterval(function(){
+					if (fetching)
+						return;
+
+					fetching = true;
+					$.ajax({url:'/api/logs/20'}).done(function( data ){
+						$('#logbox').html( data );
+						fetching = false;
+					});
+
+				}, 2000);
+			});

@@ -1,0 +1,16 @@
+﻿doctype
+html
+	head
+		title= "Reddit steam summer	game beating botnet	main page"
+		link(rel='stylesheet', href='/style.css')
+	body
+		div.login.container-fluid
+			div You have to login to see the content.
+			if loginFailed
+				.failed
+					| Login failed
+			| Admin	Password: 
+			form(method='post',	action='/api/login')
+				input#password(name='password',style='width:350px;')
+				br
+				input#send(type='submit', value='Login')
