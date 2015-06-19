@@ -34,7 +34,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-
 import lobby = require("./Lobby");
 import player = require("./Player");
 import stateManager = require("./State");
@@ -59,6 +58,15 @@ function randomStr(length:number): string {
 
 app.get("/", needLogin, function (req, res) {
     res.render("admin", state);
+});
+
+app.get("/emptyRoom", function (req, res) {
+    
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header("Access-Control-Allow-Headers", "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With");
+    res.header("Access-Control-Allow-Methods", "GET, PUT, POST");
+
+    res.sendFile('public/empty_room_finder.html', { root: __dirname })
 });
 
 app.get("/client", function (req, res) {

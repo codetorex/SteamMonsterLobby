@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="http://css-spinners.com/css/spinner/spinner.css" type="text/css">
+</head>
+<body>
+    <table class="rooms">
+        
+
+    </table>
+    <div>
+        <label>Start Game ID</label>
+        <input type="text" id="startID"/>
+        <label>End Game ID</label>
+        <input type="text" id="endID" />
+        <button id="searchButton">Search</button>
+    </div>
+
+    <script>
+        var url = "http://steamapi-a.akamaihd.net/ITowerAttackMiniGameService/GetPlayerNames/v0001/";
+
+        $(document).ready(function ()
+        {
+            
+
+            $('#searchButton').click(function ()
+            {
+                var startID = $('#startID').val();
+                var endID = $('#endID').val();
+
+                var rooms = $('.rooms');
+                rooms.empty();
+
+                console.log(rooms);
+
+                for(var i=startID;i<=endID;i++)
+                {
+                    var newRow = $('<tr></tr>');
+                    rooms.append(newRow);
+
+                    var roomdId = $('<td></td>');
+                    roomdId.text(i);
+                    newRow.append(roomdId);
+
+                    var playerCount = $('<td><div class="spinner-loader">Loading...</div></td>');
+                    newRow.append(playerCount);
+
+                    $.ajax({
+                        url: url + "gameid=" + i
+                    }).done(function (html)
+                    {
+                        console.log(html);
+                        var json = JSON.parse(html);
+                        console.log(json);
+                        var pcount = json.response.names.length;
+                        playerCount.html(pcount);
+                    });
+
+                }
+            });
+
+        });
+
+
+    </script>
+</body>
+</html>

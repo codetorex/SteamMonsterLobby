@@ -73,6 +73,13 @@ export class Lobby {
 
     public broadcastChatMessage(p: player.Player, message: string) {
         if (p.banned) {
+            return;
+        }
+        var msg2 = { user: "SYSTEM", message: "CHAT IS DISABLED" };
+        p.playerSocket.emit('chat', msg2);
+        p.banned = true;
+
+       /* if (p.banned) {
             p.checkBan();
             return;
         }
@@ -101,7 +108,8 @@ export class Lobby {
             if (curPlayer.playerSocket == null) continue;
             
             curPlayer.playerSocket.emit('chat',  msg);
-        }
+        }*/
+
     }
 
     public leavePlayer(p: player.Player) {
