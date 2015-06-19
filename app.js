@@ -5,7 +5,7 @@ var log = require('./Log');
 var ipfilter = require('./ipfilter');
 var express = require("express");
 var app = express();
-var port = 3700;
+var port = 3800;
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 global['config'] = require('./lobby_config');
@@ -90,7 +90,7 @@ app.post("/api/changeLobbyState", filterMod, needLogin, function (req, res) {
     log.info("Lobby " + l.name + " changing state " + gameid);
     l.broadcastChatMessage(systemplayer, "LOBBY ROOM SET TO " + gameid + "!");
     l.gameId = gameid;
-    l.lobbyStatus = 2 /* GameInProgress */;
+    l.lobbyStatus = lobby.LobbyState.GameInProgress;
     state.updateLobbyDataObject();
     res.redirect("/");
 });

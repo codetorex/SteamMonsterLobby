@@ -17,8 +17,8 @@
 
 console.log("TESTINGGG");
 
-//var server_address = 'http://localhost:3700';
-var server_address = 'http://188.166.36.23:3700';
+//var server_address = 'http://localhost:3800';
+var server_address = 'http://188.166.36.23:3800';
 try {
     function Emitter(obj) {
         if (obj)
