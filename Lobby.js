@@ -65,7 +65,7 @@ var Lobby = (function () {
         var me = this;
         setTimeout(function () {
             me.lobbyStatus = 2 /* GameInProgress */;
-        }, 1000);
+        }, 30000);
     };
     return Lobby;
 })();

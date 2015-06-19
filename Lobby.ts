@@ -90,7 +90,7 @@ export class Lobby {
 
         setTimeout(function () {
             me.lobbyStatus = LobbyState.GameInProgress;
-        }, 1000);
+        }, 30000);
     }
 
 }

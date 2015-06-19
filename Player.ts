@@ -37,7 +37,7 @@ export class Player {
 
         if (inLobby) {
             var lobby = this.playerLobby;
-            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length };
+            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length, state: lobby.lobbyStatus ,gameid: lobby.gameId };
             for (var k in lobbyData) helloData[k] = lobbyData[k];
         }
         else {
