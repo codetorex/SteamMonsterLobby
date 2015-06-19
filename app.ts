@@ -12,8 +12,19 @@ var port = 3700;
 import bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 
-var config = require('./lobby_config');
+global['config'] = require('./lobby_config');
 
+var config = global['config'];
+
+if (!('antispam' in config)) {
+    config.antispam = 1000;
+    console.log("ANTISPAM SET TO " + config.antispam);
+}
+
+if (!('antispamBantime' in config)) {
+    config.antispamBantime = 1000;
+    console.log("ANTISPAM BAN TIME SET TO " + config.antispamBantime);
+}
 
 app.set('views', __dirname + '/tpl');
 app.set('view engine', "jade");
@@ -54,11 +65,21 @@ app.get("/client", function (req, res) {
     res.render("client");
 });
 
+app.post("/api/changeAntispam", needLogin, function (req, res) {
+    config.antispam = parseInt(req.body.antispam);
+    console.log("ANTISPAM SET TO " + config.antispam);
+
+    config.antispamBantime = parseInt(req.body.antispamBan);
+    console.log("ANTISPAM BAN TIME SET TO " + config.antispamBantime);
+
+    res.redirect("/");
+});
+
 
 app.post("/api/createLobby", needLogin, function (req, res) {
     var l = new lobby.Lobby();
     l.name = req.body.name;
-    l.limit = req.body.limit;
+    l.limit = parseInt(req.body.limit);
     l.id = randomStr(8);
 
     state.lobbyCreated(l);    
@@ -277,8 +298,8 @@ server.on('connection', function (socket: pollen.PollenSocket) {
                         log.info("Troll detected: " + p.steamName);
                     }
                     else {
-                        p.likenewCount = data.likenews;
-                        p.wormholeCount = data.wormholes;
+                        p.likenewCount = parseInt(data.likenews);
+                        p.wormholeCount = parseInt(data.wormholes);
                         if (p.playerLobby) {
                             // it only fires every 5 sec dont worry
                             p.playerLobby.countItems();

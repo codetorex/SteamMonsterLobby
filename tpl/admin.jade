@@ -27,6 +27,9 @@ html
 				button.btn.btn-lg.btn-default(data-toggle="modal",data-target="#create-lobby-modal")
 					span.glyphicon.glyphicon-plus
 					|  Create Lobby
+				button.btn.btn-lg.btn-default(data-toggle="modal",data-target="#set-antispam")
+					span.glyphicon.glyphicon-filter
+					|  Set Antispam Settings
 					
 			div.col-sm-6
 				h4 Current Lobbies
@@ -106,7 +109,7 @@ html
 				div.modal-content
 					div.modal-header
 						button.close(data-dismiss="modal",aria-label="Close") &times;
-						h4.modal-title Join Game
+						h4.modal-title Change Lobby State
 					div.modal-body
 						form#create-lobby-form(method="post", action="/api/changeLobbyState")
 							div.form-group
@@ -121,6 +124,24 @@ html
 					div.modal-footer
 						button.btn.btn-default(data-dismiss="modal") Close
 						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Change
+
+		div.modal.fade#set-antispam(tabindex="-1")
+			div.modal-dialog
+				div.modal-content
+					div.modal-header
+						button.close(data-dismiss="modal",aria-label="Close") &times;
+						h4.modal-title Change Antispam Times
+					div.modal-body
+						form#antispam-form(method="post", action="/api/changeAntispam")
+							div.form-group
+								label Antispam Timer (in milliseconds)
+								input.form-control(name="antispam", type="text", placeholder="1000")
+							div.form-group
+								label Ban Time (in milliseconds)
+								input.form-control(name="antispamBan", type="text", placeholder="1000")
+					div.modal-footer
+						button.btn.btn-default(data-dismiss="modal") Close
+						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Set
 			
 		script.
 			$(document).ready( function(){

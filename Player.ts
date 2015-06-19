@@ -17,7 +17,30 @@ export class Player {
 
     public likenewCount: number = 0;
     public wormholeCount: number = 0;
+
+    public banned: boolean = false;
+    public banTime: number;
+    public banDuration: number;
+    public banExpiration: number;
+
+    public lastMessageTime: number;
     
+    public banPlayer(duration: number) {
+        this.banned = true;
+        this.banTime = new Date().getTime();
+        this.banDuration = duration;
+        this.banExpiration = this.banTime + this.banDuration;
+    }
+
+    public checkBan() {
+        if (!this.banned) return;
+
+        var curTime = new Date().getTime();
+        if (this.banExpiration < curTime) {
+            this.banned = false;
+        }
+    }
+
     public leaveLobby() {
         if (this.playerLobby != null) {
             this.playerLobby.leavePlayer(this);

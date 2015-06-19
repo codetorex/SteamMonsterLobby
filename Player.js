@@ -4,7 +4,22 @@ var Player = (function () {
         this.playerLobby = null; // each player can only have one lobby
         this.likenewCount = 0;
         this.wormholeCount = 0;
+        this.banned = false;
     }
+    Player.prototype.banPlayer = function (duration) {
+        this.banned = true;
+        this.banTime = new Date().getTime();
+        this.banDuration = duration;
+        this.banExpiration = this.banTime + this.banDuration;
+    };
+    Player.prototype.checkBan = function () {
+        if (!this.banned)
+            return;
+        var curTime = new Date().getTime();
+        if (this.banExpiration < curTime) {
+            this.banned = false;
+        }
+    };
     Player.prototype.leaveLobby = function () {
         if (this.playerLobby != null) {
             this.playerLobby.leavePlayer(this);

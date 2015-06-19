@@ -17,6 +17,7 @@ var Lobby = (function () {
         this.wormholeCount = 0;
         this.likenewCount = 0;
         this.lastTimeCount = 0;
+        this.config = global['config'];
     }
     Lobby.prototype.joinPlayer = function (p) {
         if (p.playerLobby != null && p.playerLobby != this) {
@@ -49,6 +50,18 @@ var Lobby = (function () {
         this.likenewCount = likenews;
     };
     Lobby.prototype.broadcastChatMessage = function (p, message) {
+        if (p.banned) {
+            p.checkBan();
+            return;
+        }
+        var curtime = new Date().getTime();
+        if (curtime - p.lastMessageTime < this.config.antispam) {
+            var msg2 = { user: "SYSTEM", message: "ANTISPAM ENABLED FOR " + this.config.antispamBantime / 1000 + " SECOND" };
+            p.playerSocket.emit('chat', msg2);
+            p.banPlayer(this.config.antispamBantime); // ban for 1 second
+            return;
+        }
+        p.lastMessageTime = curtime;
         if (message.length > 160) {
             message = message.substring(0, 160);
         }
