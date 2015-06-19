@@ -5,3 +5,13 @@
 {
     color: red;
 }
+
+.list-group-item-text span.val
+{
+    margin-right: 10px;
+}
+
+#lobbyControlPanel .button
+{
+    margin-left: 20px;
+}

@@ -82,6 +82,21 @@ app.post("/api/joinGame", needLogin, function (req, res) {
     res.redirect("/");
 });
 
+app.post("/api/changeLobbyState", needLogin, function (req, res) {
+    var l = state.getLobbyById(req.body.lobbyid);
+    var gameid = req.body.gameid;
+
+    log.info("Lobby " + l.name + " changing state " + gameid);
+
+    l.broadcastChatMessage(systemplayer, "LOBBY ROOM SET TO " + gameid + "!");
+
+    l.gameId = gameid;
+    l.lobbyStatus = lobby.LobbyState.GameInProgress;
+    state.updateLobbyDataObject();
+
+    res.redirect("/");
+});
+
 // display logs
 app.get("/api/logs/:count", needLogin, function (req, res) {
 

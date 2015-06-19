@@ -37,7 +37,15 @@ html
 							p.list-group-item-text
 								span=lobby.players.length
 								span &nbsp;/&nbsp;
-								span=lobby.limit
+								span.val=lobby.limit
+								span Lobby State 
+								span.val.badge.btn-info=lobby.lobbyStatus
+								span Wormholes 
+								span.val.badge.btn-info=lobby.wormholeCount
+								span Likenews 
+								span.val.badge.btn-info=lobby.likenewCount
+								span Game Id 
+								span.val.badge.btn-info=lobby.gameId
 			
 			div.col-sm-6
 				h4 System Log				
@@ -50,6 +58,9 @@ html
 				button.btn.btn-lg.btn-default#joinGameButton
 					span.glyphicon.glyphicon-send
 					|  Join Game
+				button.btn.btn-lg.btn-default#setLobbyRoom
+					span.glyphicon.glyphicon-edit
+					|  Change Lobby State
 
 		div.modal.fade#create-lobby-modal(tabindex="-1")
 			div.modal-dialog
@@ -89,6 +100,27 @@ html
 					div.modal-footer
 						button.btn.btn-default(data-dismiss="modal") Close
 						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Join
+
+		div.modal.fade#change-state-modal(tabindex="-1")
+			div.modal-dialog
+				div.modal-content
+					div.modal-header
+						button.close(data-dismiss="modal",aria-label="Close") &times;
+						h4.modal-title Join Game
+					div.modal-body
+						form#create-lobby-form(method="post", action="/api/changeLobbyState")
+							div.form-group
+								label Lobby Name
+								input.form-control#lobbyNameText2(name="lobbyname", type="text", value="00000",readonly)
+							div.form-group
+								label Lobby Id
+								input.form-control#lobbyIdText2(name="lobbyid", type="text", value="00000",readonly)
+							div.form-group
+								label Game Id
+								input.form-control(name="gameid", type="text", placeholder="00000")
+					div.modal-footer
+						button.btn.btn-default(data-dismiss="modal") Close
+						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Change
 			
 		script.
 			$(document).ready( function(){
@@ -116,6 +148,12 @@ html
 						$('#lobbyNameText').attr('value', lobbyName );
 						$('#lobbyIdText').attr('value', lobbyId );
 						$('#join-lobby-modal').modal('show');
+					});
+
+					$('#setLobbyRoom').off('click').click(function(){
+						$('#lobbyNameText2').attr('value', lobbyName );
+						$('#lobbyIdText2').attr('value', lobbyId );
+						$('#change-state-modal').modal('show');
 					});
 				});
 
