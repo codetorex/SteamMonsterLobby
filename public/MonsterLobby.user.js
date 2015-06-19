@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.6.5
+// @version 1.7.5
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -220,10 +220,11 @@ color: darkorange;\
         socket.on('connect', function (data) {
             console.log("connected");
             // send user info
-            
-            if (!data.resuming) {
-                socket.emit('hello', { id: steamId, name: steamName });
-            }
+            console.log(data);
+            /*if ( !data.resuming )
+				{*/
+					socket.emit('hello', { id: steamId, name: steamName });
+            //}
             
             socket.emit("heartbeat");
             setInterval(function () {
@@ -253,11 +254,14 @@ color: darkorange;\
         });
         
         function joinedLobby(data) {
+            console.log(data);
+            
             var stat = $(lobbyList).find('.lobbystats');
             if ($('.chat').size() > 0) {
                 stat.text(data.count + '/' + data.limit);
                 return;
             }
+            
             
             lobbyList.html('You are in [' + data.name + '] lobby. <span class="lobbystats">' + data.count + '/' + data.limit + '</span>');
             lobbyList.append('<button class="leave">Leave</button>');
@@ -273,6 +277,31 @@ color: darkorange;\
             
             var chatButton = $('<button id="chatButton">Send</button>');
             chatBar.append(chatButton);
+            
+            
+            if (data.state == 1) {
+                addChatMessage("SYSTEM", "THIS LOBBY IS JOINING GAME: " + data.gameid);
+                tryJoinGame(data.gameid);
+            }
+            
+            if (checkInGame()) {
+                
+                if (data.gameid != getGameId()) {
+                    
+                    
+                    
+                    var leaveBar = $('<div class="leaveBar" style="height:30px; margin: 5px 30px 10px 10px;"><button id="leaveButton" style="width:100%;">You are in game ' + getGameId() + '! You must leave, click this!</button></div>');
+                    lobbyList.append(leaveBar);
+                    
+                    $('#leaveButton').click(function () {
+                        leaveCurrentGame();
+                    });
+                }
+                else {
+                    addChatMessage("SYSTEM", "CONGRATS YOU ARE IN GAME OF THIS LOBBY: " + data.gameid);
+                }
+				
+            }
             
             function sendChat() {
                 var tbox = $(lobbyList).find('#chatText');
@@ -300,6 +329,35 @@ color: darkorange;\
             });
         }
         
+        function getGameId() {
+            var gameid = $("head").html().match(/\'current_gameid\' : \'(.+)\' },/)[1];
+            return gameid;
+        }
+        
+        function checkInGame() {
+            if (getGameId() == '0') return false;
+            
+            return true;
+        }
+        
+        
+        
+        var leavingGame = false;
+        function leaveCurrentGame() {
+            if (leavingGame) return;
+            leavingGame = true;
+            
+            var gameid = getGameId();
+            
+            $.post(
+                'http://steamcommunity.com/minigame/ajaxleavegame/',
+				{ 'gameid' : gameid, 'sessionid' : unsafeWindow.g_sessionID }
+            ).done(function () {
+                console.log("it is done");
+                unsafeWindow.location.reload();
+            });
+        }
+        
         function updateLobbies(data) {
             console.log("lobbies received");
             lobbyList.empty();
@@ -315,7 +373,29 @@ color: darkorange;\
             for (var i = 0; i < lobbies.length; i++) {
                 var curLobby = lobbies[i];
                 
-                lobbyList.append('<div class="lobby" data-id="' + curLobby.id + '" style="padding: 10px 20px;">' + curLobby.name 
+                var lobbyStateText;
+                var lobbyColor;
+                var hasJoinButton;
+                switch (curLobby.state) {
+                    case 0:
+                        lobbyStateText = "Waiting for players";
+                        lobbyColor = "yellow";
+                        break;
+								
+                    case 1:
+                        lobbyStateText = "Joining a game";
+                        lobbyColor = "red";
+                        break;
+								
+                    case 2:
+                        lobbyStateText = "Game in progress";
+                        lobbyColor = "green";
+                        break;
+                }
+                
+                
+                
+                lobbyList.append('<div class="lobby" data-id="' + curLobby.id + '" style="padding: 10px 20px;">' + curLobby.name + '<span class="state" style="margin-left:20px; color: ' + lobbyColor + ';">[' + lobbyStateText + ']</span>' 
                     + '<span class="lobbystats" style="right:0; position:absolute;padding-right:20px">' + curLobby.count + '/' + curLobby.limit + '<button>Join</button></span></div>')
             }
             
@@ -343,41 +423,75 @@ color: darkorange;\
         
         socket.on('joinedLobby', joinedLobby);
         
-        socket.on('chat', function (data) {
-            if (!data.message) return;
-            
+        function addChatMessage(user, message) {
             var chat = $('.lobbies .chat');
             console.log(chat);
             
             // allow max 
-            /*var curSize = chat.children().size();
-					var removeCount = cursize - 50;
-					if (removeCount > 0)
-					{
-						//chat.find('.chatmessage:lt(' + removeCount + ')').remove();
-					}*/
-					
-				
-				var chatObj = $('<div class="chatmessage"><span class="user">' + data.user + ' </span>' + data.message + '</div>');
+            var curSize = chat.children().size();
+            var removeCount = curSize - 50;
+            if (removeCount > 0) {
+                var selector = '.chatmessage:lt(' + removeCount + ')';
+                console.log(selector);
+                chat.find(selector).remove();
+            }
+            
+            
+            var chatObj = $('<div class="chatmessage"><span class="user">' + user + ' </span>' + message + '</div>');
             chat.append(chatObj);
             
             var height = chat[0].scrollHeight;
             chat.scrollTop(height);
-				
-
+        }
+        
+        socket.on('chat', function (data) {
+            if (!data.message) return;
+            addChatMessage(data.user, data.message);
         });
         
-        socket.on('joinGame', function (data) {
-            console.log("Joining game");
-            // keep banging doors of fortress steam
-            var gameId = data.id;
-            console.log(unsafeWindow.JoinGame);
-            unsafeWindow.JoinGame(gameId);
+        function tryJoinGame(gameId) {
             
-            setInterval(function () {
-                $J('div.btn_grey_white_innerfade.btn_medium').click();
+            addChatMessage("SYSTEM", "TRYING TO JOIN GAME: " + gameId);
+            
+            if (checkInGame()) {
+                if (getGameId() == gameId) {
+                    addChatMessage("SYSTEM", "CONGRATS! YOU ALREADY IN " + gameId);
+                    return;
+                }
+                
+                addChatMessage("SYSTEM", "YOU ARE IN ANOTHER GAME LEAVING IT");
+                leaveCurrentGame();
+                return;
+            }
+            
+            console.log(unsafeWindow.JoinGame);
+            
+            console.log("Joining the Game");
+            
+            unsafeWindow.JoinGame(gameId);
+            var joinLoop = setInterval(function () {
+                unsafeWindow.$J('div.btn_grey_white_innerfade.btn_medium').click();
+                
+                if (typeof unsafeWindow.g_GameID === 'undefined') {
+                    addChatMessage("SYSTEM", "STILL NOT IN GAME, TRYING AGAIN");
+                    console.log("Still not in game. Keep trying to enter the game...");
+                }
+                else {
+                    addChatMessage("SYSTEM", "DONE!!!");
+                    unsafeWindow.location.reload();
+                    return;
+                }
+                
+                
                 unsafeWindow.JoinGame(gameId);
             }, 2000);
+        }
+        
+        socket.on('joinGame', function (data) {
+            // keep banging doors of fortress steam
+            var gameId = data.id;
+            
+            tryJoinGame(gameId);
         });
         
         /*sendButton.onclick = sendMessage = function () {
