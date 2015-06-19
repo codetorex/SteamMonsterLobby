@@ -205,7 +205,7 @@ server.on('connection', function (socket) {
         ;
     });
     socket.on('chat', function (data) {
-        if (server.loadFactor > 120)
+        if (server.loadFactor > 125)
             return;
         var p = socket["player"];
         if (p != null) {
@@ -215,7 +215,7 @@ server.on('connection', function (socket) {
         }
     });
     socket.on('heartbeat', function (data) {
-        if (server.loadFactor > 120)
+        if (server.loadFactor > 125)
             return;
         var p = socket["player"];
         if (p != null) {

@@ -40,6 +40,7 @@ var PollenServer = (function (_super) {
         this.lastRequestCheck = 0;
         this.requestSpeed = 0;
         this.loadFactor = 0;
+        this.lastIntervalChange = 0;
         this.app = appobj;
     }
     PollenServer.prototype.getSocket = function (id) {
@@ -77,21 +78,28 @@ var PollenServer = (function (_super) {
             self.lastRequestCheck = self.requestCounter;
             self.loadFactor = Math.ceil((self.requestSpeed / self.maxRequestsPerSecond) * 100);
             console.log("ReqPsec: " + self.requestSpeed + " LoadF: " + self.loadFactor + " Reqs: " + self.requestCounter + ' CI:' + self.clientInterval);
-            if (self.loadFactor > 200) {
+            var curTime = new Date().getTime();
+            // change speed every 5 second
+            if (curTime - self.lastRequestCheck < 5000) {
+                return;
+            }
+            if (self.loadFactor > 160) {
                 // slow down in half
-                self.clientInterval = Math.ceil(self.clientInterval * 2);
+                self.clientInterval = Math.ceil(self.clientInterval * 1.25);
                 console.log('Slowing down client intervals to: ' + self.clientInterval);
+                self.lastIntervalChange = curTime;
                 for (var s in self.sockets) {
                     var sck = self.sockets[s];
                     sck.emit('reinterval', { delay: self.clientInterval });
                 }
             }
-            if (self.loadFactor < 100) {
+            if (self.loadFactor < 50) {
                 // slow down in %30
-                var newInterval = Math.ceil(self.clientInterval / 1.30);
+                var newInterval = Math.ceil(self.clientInterval / 1.25);
                 if (newInterval > 500) {
                     self.clientInterval = newInterval;
                     console.log('Speeding up client intervals to: ' + self.clientInterval);
+                    self.lastIntervalChange = curTime;
                     for (var s in self.sockets) {
                         var sck = self.sockets[s];
                         sck.emit('reinterval', { delay: self.clientInterval });
@@ -105,7 +113,7 @@ var PollenServer = (function (_super) {
             var curDate = new Date().getTime();
             for (var s in self.sockets) {
                 var sck = self.sockets[s];
-                if (curDate - sck.lastRequest > 8000) {
+                if (curDate - sck.lastRequest > 10000) {
                     purgeList.push(sck.socketId);
                 }
             }

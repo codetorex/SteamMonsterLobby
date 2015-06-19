@@ -282,7 +282,7 @@ server.on('connection', function (socket: pollen.PollenSocket) {
     });
 
     socket.on('chat', function (data) {
-        if (server.loadFactor > 120) return;
+        if (server.loadFactor > 125) return;
         var p: player.Player = socket["player"];
         if (p != null) {
             if (p.playerLobby != null) {
@@ -293,7 +293,7 @@ server.on('connection', function (socket: pollen.PollenSocket) {
 
     
     socket.on('heartbeat', function (data) {
-        if (server.loadFactor > 120 ) return;
+        if (server.loadFactor > 125 ) return;
         
         var p: player.Player = socket["player"];
         if (p != null) {
