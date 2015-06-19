@@ -82,6 +82,7 @@ export class StateManager {
                 name: curLobby.name,
                 limit: curLobby.limit,
                 count: curLobby.players.length,
+                state: curLobby.lobbyStatus,
             });
         }
 

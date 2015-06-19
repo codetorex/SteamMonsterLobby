@@ -63,6 +63,7 @@ var StateManager = (function () {
                 name: curLobby.name,
                 limit: curLobby.limit,
                 count: curLobby.players.length,
+                state: curLobby.lobbyStatus,
             });
         }
         this.lobbyData = lobbyList;
