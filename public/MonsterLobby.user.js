@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.9.5
+// @version 2.0.0
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -19,6 +19,7 @@ console.log("TESTINGGG");
 
 //var server_address = 'http://localhost:3800';
 var server_address = 'http://188.166.36.23:3800';
+
 try {
     function Emitter(obj) {
         if (obj)
