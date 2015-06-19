@@ -66,11 +66,16 @@ app.post("/api/createLobby", needLogin, function (req, res) {
     res.redirect("/");
 });
 
+var systemplayer = new player.Player();
+systemplayer.steamName = "SYSTEM";
+
 app.post("/api/joinGame", needLogin, function (req, res) {
     var l = state.getLobbyById(req.body.lobbyid);
     var gameid = req.body.gameid;
 
     log.info("Lobby " + l.name + " joining to game " + gameid);
+
+    l.broadcastChatMessage(systemplayer, "JOINING INTO ROOM " + gameid + "! GOOD LUCK!");
 
     l.joinGame(gameid);
     
