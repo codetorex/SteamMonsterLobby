@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.7.5
+// @version 1.8.5
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -163,58 +163,39 @@ try {
         return PollenClient;
     })();
     
-    function lobbyStart($) {
-        "use strict";
-        console.log($);
-        
-        
-        GM_addStyle('.lobbies button {\
-				    padding: 5px 10px;\
-				    background-color: #8AAF05;\
-				    font-family: "Press Start 2P",arial,sans-serif;\
-				    color: #D9FF54;\
-				    border: 2px solid rgb(163, 207, 6);\
-				    font-size: 12px;\
-				    text-align: center;\
-				    cursor: pointer;\
-				    display: inline-block;\
-				    box-shadow: 2px 2px 0px #000;\
-				    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);\
-				    margin-left: 10px;\
-			    }\
-					.chat .user {\
+    
+    GM_addStyle('.lobbies button {\
+				padding: 5px 10px;\
+				background-color: #8AAF05;\
+				font-family: "Press Start 2P",arial,sans-serif;\
+				color: #D9FF54;\
+				border: 2px solid rgb(163, 207, 6);\
+				font-size: 12px;\
+				text-align: center;\
+				cursor: pointer;\
+				display: inline-block;\
+				box-shadow: 2px 2px 0px #000;\
+				text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);\
+				margin-left: 10px;\
+			}\
+			.chat .user {\
 color: darkorange;\
 }');
-        
-        console.log("Loading Steam Monster Lobby...");
-        
-        var inject_elem = $(".page_background");
-        var injected = $('<div class="monsterlobby"></div>');
-        inject_elem.prepend(injected);
-        
-        console.log(injected.css);
-        injected.attr("style" , 'width: 948px; color:black;margin-left:auto;margin-right:auto;border-bottom: 2px solid black;background-color: rgba(255,255,255,0.4); padding-bottom: 10px;font-family: "Press Start 2P","Lucida Console",Consolas,Arial;');
-        
-        injected.append('<div class="lobbyheader" style="text-align:center;padding-top:20px;padding-bottom:10px; border-bottom: 2px solid black;">Reddit Botnet Lobbies</div>');
-        
-        var lobbyList = $('<div class="lobbies" style="position:relative; padding-top: 10px;"></div>');
-        injected.append(lobbyList);
-        
-        console.log("Created lobby elements...");
+    var lobbyList;
+    var socket;
+    
+    var getHeartBeatData = null;
+    
+    function initBasics(page) {
         
         var steamId = unsafeWindow.g_steamID;
         var steamName = $('a.username').text().trim();
         
-        
         console.log(steamId);
         console.log(steamName);
         
-        var socket = new PollenClient(new GreaseMonkeyRequester());
+        socket = new PollenClient(new GreaseMonkeyRequester());
         socket.socketId = steamId;
-        socket.connect(server_address);
-        
-        var lastHB = (new Date()).getTime();
-        
         
         
         socket.on('connect', function (data) {
@@ -228,20 +209,106 @@ color: darkorange;\
             
             socket.emit("heartbeat");
             setInterval(function () {
-                socket.emit("heartbeat");
+                
+                var hbdata = null;
+                if (getHeartBeatData != null) {
+                    hbdata = getHeartBeatData();
+                }
+                
+                socket.emit("heartbeat", hbdata);
             }, 4000);
-				
-        });
-        
-        socket.on('error', function (res) {
-            console.log('ERROR');
-            console.log(res);
         });
         
         socket.on('disconnect', function () {
-            alert('disconnected');
             $('.monsterlobby').html('Disconnected');
         });
+        
+        
+        var inject_elem = $(page); // use page here
+        var injected = $('<div class="monsterlobby"></div>');
+        inject_elem.prepend(injected);
+        
+        console.log(injected.css);
+        injected.attr("style" , 'width: 948px; color:black;margin-left:auto;margin-right:auto;border-bottom: 2px solid black;background-color: rgba(255,255,255,0.4); padding-bottom: 10px;font-family: "Press Start 2P","Lucida Console",Consolas,Arial;');
+        
+        injected.append('<div class="lobbyheader" style="text-align:center;padding-top:20px;padding-bottom:10px; border-bottom: 2px solid black;">Reddit Botnet Lobbies</div>');
+        
+        lobbyList = $('<div class="lobbies" style="position:relative; padding-top: 10px;"></div>');
+        injected.append(lobbyList);
+        
+        console.log("Created lobby elements...");
+    }
+    
+    function initChat(data, showLeave) {
+        if (typeof showLeave === 'undefined') {
+            showLeave = true;
+        }
+        
+        lobbyList.html('You are in [' + data.name + '] lobby. <span class="lobbystats">' + data.count + '/' + data.limit + '</span>');
+        
+        if (showLeave) {
+            lobbyList.append('<button class="leave">Leave</button>');
+        }
+        
+        var chat = $('<div class="chat" style="border: 2px solid black; margin: 10px 10px 0px 10px;height:250px; position:relative;overflow-y: scroll;"></div>');
+        lobbyList.append(chat);
+        
+        var chatBar = $('<div class="chatBar" style="height:30px; margin: 5px 10px 10px 10px;"></div>');
+        lobbyList.append(chatBar);
+        
+        var chatTextBox = $('<input type="text" maxlength="160" id="chatText" style="width:839px;height:100%; color: black;font-family: \'Press Start 2P\',arial,sans-serif;"></input>');
+        chatBar.append(chatTextBox);
+        
+        var chatButton = $('<button id="chatButton">Send</button>');
+        chatBar.append(chatButton);
+        
+        var statsBar = $('<div class="statsBar" style="margin: 5px 10px 10px 10px;"></div>');
+        lobbyList.append(statsBar);
+        
+        
+        function sendChat() {
+            var tbox = $(lobbyList).find('#chatText');
+            var msg = tbox.val();
+            socket.emit('chat', { message: msg });
+            tbox.val('');
+        }
+        
+        $(lobbyList).find('#chatButton').click(function () {
+            sendChat();
+        });
+        
+        $(lobbyList).find('#chatText').keyup(function (e) {
+            if (e.keyCode == 13) {
+                sendChat();
+            }
+        });
+        
+        if (showLeave) {
+            var leaveButton = $(lobbyList).find('.leave');
+            leaveButton.off('click');
+            
+            leaveButton.click(function () {
+                console.log("leaving lobby");
+                socket.emit('leaveLobby');
+            });
+        }
+    }
+    
+    var lobbyGameId = 0;
+    
+    function lobbyStart($) {
+        lobbyStart2($, ".page_background");
+    }
+    
+    function lobbyStart2($, page) {
+        "use strict";
+        console.log($);
+        
+        console.log("Loading Steam Monster Lobby...");
+        
+        initBasics(page);
+        
+        var lastHB = (new Date()).getTime();
         
         socket.on('hello', function (data) {
             console.log("player joined to server");
@@ -253,40 +320,46 @@ color: darkorange;\
             }
         });
         
+        socket.connect(server_address);
+        
         function joinedLobby(data) {
             console.log(data);
-            
+            lobbyGameId = data.gameid;
             var stat = $(lobbyList).find('.lobbystats');
+            var statBar = $(lobbyList).find('.statsBar');
             if ($('.chat').size() > 0) {
                 stat.text(data.count + '/' + data.limit);
+                
+                if ("wormholes" in data && "likenews" in data) {
+                    statBar.text('Total Wormholes: ' + data.wormholes + '  Total Like-News:' + data.likenews);
+                }
                 return;
             }
             
-            
-            lobbyList.html('You are in [' + data.name + '] lobby. <span class="lobbystats">' + data.count + '/' + data.limit + '</span>');
-            lobbyList.append('<button class="leave">Leave</button>');
-            
-            var chat = $('<div class="chat" style="border: 2px solid black; margin: 10px 10px 0px 10px;height:250px; position:relative;overflow-y: scroll;"></div>');
-            lobbyList.append(chat);
-            
-            var chatBar = $('<div class="chatBar" style="height:30px; margin: 5px 10px 10px 10px;"></div>');
-            lobbyList.append(chatBar);
-            
-            var chatTextBox = $('<input type="text" maxlength="160" id="chatText" style="width:839px;height:100%; color: black;font-family: \'Press Start 2P\',arial,sans-serif;"></input>');
-            chatBar.append(chatTextBox);
-            
-            var chatButton = $('<button id="chatButton">Send</button>');
-            chatBar.append(chatButton);
-            
+            initChat(data);
             
             if (data.state == 1) {
                 addChatMessage("SYSTEM", "THIS LOBBY IS JOINING GAME: " + data.gameid);
                 tryJoinGame(data.gameid);
             }
             
+            if (data.state == 2 && !checkInGame() && data.gameid != getGameId()) {
+                addChatMessage("SYSTEM", "YOU ARE LATE TO JOIN THE GAME. ADDING BUTTON TO JOIN MANUALLY.");
+                
+                var joinBar = $('<div class="joinBar" style="height:30px; margin: 5px 30px 10px 10px;"><button id="joinButton" style="width:100%;">You are late, click to try manually join game ' + data.gameid + '</button></div>');
+                lobbyList.append(joinBar);
+                
+                $('#joinButton').click(function () {
+                    tryJoinGame(data.gameid);
+                });
+            }
+            
             if (checkInGame()) {
                 
                 if (data.gameid != getGameId()) {
+                    
+                    console.log(data.gameid);
+                    console.log(getGameId());
                     
                     
                     
@@ -302,31 +375,7 @@ color: darkorange;\
                 }
 				
             }
-            
-            function sendChat() {
-                var tbox = $(lobbyList).find('#chatText');
-                var msg = tbox.val();
-                socket.emit('chat', { message: msg });
-                tbox.val('');
-            }
-            
-            $(lobbyList).find('#chatButton').click(function () {
-                sendChat();
-            });
-            
-            $(lobbyList).find('#chatText').keyup(function (e) {
-                if (e.keyCode == 13) {
-                    sendChat();
-                }
-            });
-            
-            var leaveButton = $(lobbyList).find('.leave');
-            leaveButton.off('click');
-            
-            leaveButton.click(function () {
-                console.log("leaving lobby");
-                socket.emit('leaveLobby');
-            });
+        
         }
         
         function getGameId() {
@@ -502,14 +551,61 @@ color: darkorange;\
 
     }
     
+    function s() {
+        return unsafeWindow.g_Minigame.m_CurrentScene;
+    }
+    
+    
+    var ABILITIES = {
+        FIRE_WEAPON: 1,
+        CHANGE_LANE: 2,
+        RESPAWN: 3,
+        CHANGE_TARGET: 4,
+        MORALE_BOOSTER: 5,
+        GOOD_LUCK_CHARMS: 6,
+        MEDICS: 7,
+        METAL_DETECTOR: 8,
+        DECREASE_COOLDOWNS: 9,
+        TACTICAL_NUKE: 10,
+        CLUSTER_BOMB: 11,
+        NAPALM: 12,
+        RESURRECTION: 13,
+        CRIPPLE_SPAWNER: 14,
+        CRIPPLE_MONSTER: 15,
+        MAX_ELEMENTAL_DAMAGE: 16,
+        RAINING_GOLD: 17,
+        CRIT: 18,
+        PUMPED_UP: 19,
+        THROW_MONEY_AT_SCREEN: 20,
+        GOD_MODE: 21,
+        TREASURE: 22,
+        STEAL_HEALTH: 23,
+        REFLECT_DAMAGE: 24,
+        FEELING_LUCKY: 25,
+        WORMHOLE: 26,
+        LIKE_NEW: 27
+    };
+    
+    function getItemCount(itemId) {
+        for (var i = 0; i < s().m_rgPlayerTechTree.ability_items.length; ++i) {
+            var abilityItem = s().m_rgPlayerTechTree.ability_items[i];
+            if (abilityItem.ability == itemId) {
+                return abilityItem.quantity;
+            }
+        }
+        return 0;
+    }
+    
+    
     function gameInformer($) {
         "use strict";
         console.log($);
         
         console.log("Game join informer start...");
         
-        var socket = new PollentClient(new GreaseMonkeyRequester()); //io.connect(server_address);
-        socket.connect(server_address);
+        lobbyStart2($, ".pagecontent");
+        
+        
         
         var steamId = unsafeWindow.g_steamID;
         var gameId = unsafeWindow.g_GameID;
@@ -517,11 +613,19 @@ color: darkorange;\
         console.log(steamId);
         console.log(gameId);
         
+        getHeartBeatData = function () {
+            if (gameId == lobbyGameId) {
+                var remaining_wormholes = getItemCount(ABILITIES.WORMHOLE);
+                var remaining_likenew = getItemCount(ABILITIES.LIKE_NEW);
+                
+                return { wormholes: remaining_wormholes, likenews: remaining_likenew, gameid: gameId };
+            }
+            else {
+                return { gameid: gameId };
+            }
+        }
         
-        socket.on('connect', function () {
-            console.log("connected");
-            socket.emit('ingame', { id: steamId, gameid: gameId });
-        });
+        socket.connect(server_address);
     }
     
     (function () {
