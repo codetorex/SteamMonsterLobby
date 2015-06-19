@@ -208,7 +208,8 @@ server.on('connection', function (socket: pollen.PollenSocket) {
         var isJoined = state.joinPlayerToLobby(p, lobby);
 
         if (isJoined) {
-            socket.emit('joinedLobby', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+            //socket.emit('joinedLobby', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
+            p.sendHello();
         }
         else {
             socket.emit('lobbyFull', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
