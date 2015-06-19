@@ -187,21 +187,23 @@ server.on('connection', function (socket) {
         if (p != null) {
             var cur = new Date();
             p.lastHeartBeat = cur.getTime();
-            if (typeof data.likenews !== "undefined") {
-                if (!validator.isInt(data.likenews) || !validator.isInt(data.wormholes)) {
-                    log.info("Troll detected: " + p.steamName);
-                }
-                else {
-                    p.likenewCount = data.likenews;
-                    p.wormholeCount = data.wormholes;
-                    if (p.playerLobby) {
-                        // it only fires every 5 sec dont worry
-                        p.playerLobby.countItems();
+            if (typeof data != "undefined") {
+                if ("likenews" in data && "wormholes" in data) {
+                    if (!validator.isInt(data.likenews) || !validator.isInt(data.wormholes)) {
+                        log.info("Troll detected: " + p.steamName);
+                    }
+                    else {
+                        p.likenewCount = data.likenews;
+                        p.wormholeCount = data.wormholes;
+                        if (p.playerLobby) {
+                            // it only fires every 5 sec dont worry
+                            p.playerLobby.countItems();
+                        }
                     }
                 }
-            }
-            if (typeof data.gameid !== "undefined") {
-                p.currentPlayerGameId = data.gameid;
+                if (typeof data.gameid !== "undefined") {
+                    p.currentPlayerGameId = data.gameid;
+                }
             }
             p.sendHello();
         }
