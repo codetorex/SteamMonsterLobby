@@ -1,6 +1,6 @@
-﻿/// <reference path="typings/socket.io/socket.io.d.ts" />
+﻿
 
-import io = require('socket.io');
+import pollen = require('./Pollen');
 import lobby = require("./Lobby");
 import state = require("./State");
 
@@ -10,7 +10,7 @@ export class Player {
 
     public lastHeartBeat: number;
 
-    public playerSocket: SocketIO.Socket;
+    public playerSocket: pollen.PollenSocket;
     public playerLobby: lobby.Lobby = null; // each player can only have one lobby
 
     public currentPlayerGameId;

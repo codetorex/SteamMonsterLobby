@@ -73,17 +73,19 @@ var StateManager = (function () {
         }
     };
     StateManager.prototype.queuePlayerDisconnected = function (p) {
-        if (p['timeout'] !== 'undefined') {
-            clearTimeout(p['timeout']);
-            p['timeout'] = null;
+        var curTime = new Date().getTime();
+        if (curTime - p.lastHeartBeat > 8000) {
+            this.playerDisconnected(p);
         }
-        var me = this;
-        p['timeout'] = setTimeout(function () {
-            me.playerDisconnected(p);
-        }, 60000);
     };
-    StateManager.prototype.playerConnectionLost = function (p) {
-        p.playerSocket = null;
+    StateManager.prototype.playerConnectionLost = function (p, socket) {
+        if (p.playerSocket == socket) {
+            p.playerSocket = null;
+        }
+        else {
+            log.info("Player reconnected with different socket: " + p.steamName);
+            return;
+        }
         this.queuePlayerDisconnected(p);
         log.info("Player connection lost: " + p.steamName);
     };

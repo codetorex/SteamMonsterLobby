@@ -1,4 +1,3 @@
-/// <reference path="typings/socket.io/socket.io.d.ts" />
 var state = require("./State");
 var Player = (function () {
     function Player() {

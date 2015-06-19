@@ -47,6 +47,8 @@
     <TypeScriptCompile Include="Lobby.ts" />
     <TypeScriptCompile Include="Log.ts" />
     <TypeScriptCompile Include="Player.ts" />
+    <TypeScriptCompile Include="Pollen.ts" />
+    <TypeScriptCompile Include="public\PollenClient.ts" />
     <TypeScriptCompile Include="State.ts" />
   </ItemGroup>
   <ItemGroup>

@@ -31,6 +31,10 @@ export class Lobby {
         if (p.playerLobby != null && p.playerLobby != this ) {
             p.leaveLobby();
         }
+
+        if (this.players.indexOf(p) > -1) {
+            return;
+        }
        
         this.players.push(p);
         p.playerLobby = this;

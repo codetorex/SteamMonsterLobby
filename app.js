@@ -1,5 +1,5 @@
 /// <reference path="typings/node/node.d.ts" />
-/// <reference path="typings/socket.io/socket.io.d.ts" />
+/// <reference path="typings/body-parser/body-parser.d.ts" />
 /// <reference path="typings/express/express.d.ts" />
 var log = require('./Log');
 var express = require("express");
@@ -13,6 +13,7 @@ app.set('view engine', "jade");
 app.engine('jade', require('jade').__express);
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(cookieParser());
 var lobby = require("./Lobby");
 var stateManager = require("./State");
@@ -119,21 +120,16 @@ function checkLogin(req) {
     }
     return false;
 }
-var io = require('socket.io');
+var pollen = require('./Pollen');
 var appServer = app.listen(port);
-var server = io(appServer, { pingInterval: 5000, allowUpgrades: false, transports: ['polling'] });
+var server = new pollen.PollenServer(app);
 //var server = io.listen(37005, { pingInterval: 5000, allowUpgrades: false, transports: ['polling'] });
-server.sockets.on('connection', function (socket) {
+server.on('connection', function (socket) {
     socket.on('hello', function (data) {
         var p = state.getOrCreatePlayer(data.id);
         p.steamName = data.name;
         p.playerSocket = socket;
         socket["player"] = p;
-        if (p['timeout'] !== 'undefined') {
-            clearTimeout(p['timeout']);
-            p['timeout'] = null;
-            delete p['timeout'];
-        }
         state.playerJoined(p);
         p.sendHello();
     });
@@ -185,8 +181,8 @@ server.sockets.on('connection', function (socket) {
         if (p != null) {
             var cur = new Date();
             p.lastHeartBeat = cur.getTime();
+            p.sendHello();
         }
-        p.sendHello();
     });
     socket.on('error', function (reason) {
         console.log(reason);
@@ -194,9 +190,10 @@ server.sockets.on('connection', function (socket) {
     socket.on('disconnect', function () {
         var p = socket["player"];
         if (p != null) {
-            state.playerConnectionLost(p);
+            state.playerConnectionLost(p, socket);
         }
     });
 });
+server.start();
 log.info("Server started on port " + port);
 //# sourceMappingURL=app.js.map
