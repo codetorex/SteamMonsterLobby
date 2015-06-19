@@ -180,6 +180,8 @@ var appServer = app.listen(port);
 
 var server = new pollen.PollenServer(app);
 
+import validator = require("validator");
+
 //var server = io.listen(37005, { pingInterval: 5000, allowUpgrades: false, transports: ['polling'] });
 
 server.on('connection', function (socket: pollen.PollenSocket) {
@@ -254,6 +256,23 @@ server.on('connection', function (socket: pollen.PollenSocket) {
 
             var cur = new Date();
             p.lastHeartBeat = cur.getTime();
+            if (typeof data.likenews !== "undefined") {
+                if (!validator.isInt(data.likenews) || !validator.isInt(data.wormholes)) {
+                    log.info("Troll detected: " + p.steamName);
+                }
+                else {
+                    p.likenewCount = data.likenews;
+                    p.wormholeCount = data.wormholes;
+                    if (p.playerLobby) {
+                        // it only fires every 5 sec dont worry
+                        p.playerLobby.countItems();
+                    }
+                }
+            }
+
+            if (typeof data.gameid !== "undefined") {
+                p.currentPlayerGameId = data.gameid;
+            }
             p.sendHello();
         }
     });

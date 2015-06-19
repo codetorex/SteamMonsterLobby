@@ -14,6 +14,9 @@ export class Player {
     public playerLobby: lobby.Lobby = null; // each player can only have one lobby
 
     public currentPlayerGameId;
+
+    public likenewCount: number = 0;
+    public wormholeCount: number = 0;
     
     public leaveLobby() {
         if (this.playerLobby != null) {
@@ -37,7 +40,7 @@ export class Player {
 
         if (inLobby) {
             var lobby = this.playerLobby;
-            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length, state: lobby.lobbyStatus ,gameid: lobby.gameId };
+            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length, state: lobby.lobbyStatus ,gameid: lobby.gameId, wormholes: lobby.wormholeCount, likenews: lobby.likenewCount };
             for (var k in lobbyData) helloData[k] = lobbyData[k];
         }
         else {

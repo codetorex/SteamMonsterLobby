@@ -2,6 +2,8 @@ var state = require("./State");
 var Player = (function () {
     function Player() {
         this.playerLobby = null; // each player can only have one lobby
+        this.likenewCount = 0;
+        this.wormholeCount = 0;
     }
     Player.prototype.leaveLobby = function () {
         if (this.playerLobby != null) {
@@ -19,7 +21,7 @@ var Player = (function () {
         helloData.alreadyInLobby = inLobby;
         if (inLobby) {
             var lobby = this.playerLobby;
-            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length, state: lobby.lobbyStatus, gameid: lobby.gameId };
+            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length, state: lobby.lobbyStatus, gameid: lobby.gameId, wormholes: lobby.wormholeCount, likenews: lobby.likenewCount };
             for (var k in lobbyData)
                 helloData[k] = lobbyData[k];
         }

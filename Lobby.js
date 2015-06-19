@@ -14,6 +14,9 @@ var Lobby = (function () {
         this.currentLobby = null;
         this.updateTimer = null;
         this.lobbyStatus = 0 /* WaitingPlayers */;
+        this.wormholeCount = 0;
+        this.likenewCount = 0;
+        this.lastTimeCount = 0;
     }
     Lobby.prototype.joinPlayer = function (p) {
         if (p.playerLobby != null && p.playerLobby != this) {
@@ -25,6 +28,25 @@ var Lobby = (function () {
         this.players.push(p);
         p.playerLobby = this;
         state.globalState.updateLobbyDataObject();
+    };
+    Lobby.prototype.countItems = function () {
+        var curTime = new Date().getTime();
+        ;
+        if (curTime - this.lastTimeCount < 5000) {
+            return;
+        }
+        var wormholes = 0;
+        var likenews = 0;
+        for (var i = 0; i < this.players.length; i++) {
+            var curPlayer = this.players[i];
+            if (curPlayer.playerSocket == null)
+                continue;
+            wormholes += curPlayer.wormholeCount;
+            likenews += curPlayer.likenewCount;
+        }
+        this.lastTimeCount = curTime;
+        this.wormholeCount = wormholes;
+        this.likenewCount = likenews;
     };
     Lobby.prototype.broadcastChatMessage = function (p, message) {
         if (message.length > 160) {

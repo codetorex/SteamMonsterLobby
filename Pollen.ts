@@ -2,7 +2,6 @@
 import events = require('events');
 
 //// SIMPLE POLLING PACKET SERVER
-//// BY CODETOREX
 
 export class PollenSocket {
     public socketId: string;

@@ -6,7 +6,6 @@ var __extends = this.__extends || function (d, b) {
 };
 var events = require('events');
 //// SIMPLE POLLING PACKET SERVER
-//// BY CODETOREX
 var PollenSocket = (function () {
     function PollenSocket() {
         this.packets = [];

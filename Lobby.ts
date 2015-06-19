@@ -27,6 +27,11 @@ export class Lobby {
     public lobbyStatus: LobbyState = LobbyState.WaitingPlayers;
     public gameId: any;
 
+    public wormholeCount: number = 0;
+    public likenewCount: number = 0;
+
+    public lastTimeCount: number = 0;
+
     public joinPlayer(p: player.Player) {
         if (p.playerLobby != null && p.playerLobby != this ) {
             p.leaveLobby();
@@ -39,6 +44,29 @@ export class Lobby {
         this.players.push(p);
         p.playerLobby = this;
         state.globalState.updateLobbyDataObject();
+    }
+
+    public countItems() {
+
+        var curTime = new Date().getTime();;
+
+        if (curTime - this.lastTimeCount < 5000) {
+            return;
+        }
+        
+        var wormholes = 0;
+        var likenews = 0;
+
+        for (var i = 0; i < this.players.length; i++) {
+            var curPlayer: player.Player = this.players[i];
+            if (curPlayer.playerSocket == null) continue;
+            wormholes += curPlayer.wormholeCount;
+            likenews += curPlayer.likenewCount;
+        }
+
+        this.lastTimeCount = curTime;
+        this.wormholeCount = wormholes;
+        this.likenewCount = likenews;
     }
 
     public broadcastChatMessage(p: player.Player, message: string) {
