@@ -504,9 +504,10 @@ color: darkorange;\
             
             var chatObj = $('<div class="chatmessage"><span class="user">' + user + ' </span>' + message + '</div>');
             chat.append(chatObj);
-            
-            var height = chat[0].scrollHeight;
-            chat.scrollTop(height);
+            if (chat[0] && chat[0].scrollHeight) {
+	        var height = chat[0].scrollHeight;
+	        chat.scrollTop(height);
+            }
         }
         
         socket.on('chat', function (data) {
