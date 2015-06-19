@@ -89,13 +89,18 @@ Emitter.prototype.hasListeners = function (event) {
 };
 
 interface PollenRequester {
+    isrequesting: boolean;
     request(url: string, data: string, callback: Function);
 }
 
 declare var GM_xmlhttpRequest: any;
 
 class GreaseMonkeyRequester implements PollenRequester {
+    public isrequesting: boolean = false;
+
     public request(url: string, data: string, callback: Function) {
+        this.isrequesting = true;
+        var self = this;
         GM_xmlhttpRequest({
             method: "POST",
             url: url,
@@ -105,6 +110,7 @@ class GreaseMonkeyRequester implements PollenRequester {
             },
             onload: function (response) {
                 callback(response.responseText);
+                self.isrequesting = false;
             }
         });
     }
@@ -113,7 +119,7 @@ class GreaseMonkeyRequester implements PollenRequester {
 
 class PollenClient {
     public url: string;
-    public interval: any;
+    public interval: any = null;
     public packets: Object[] = [];
     public domain: string = '/pollen/';
     public socketId: string;
@@ -161,17 +167,35 @@ class PollenClient {
         }); 
     }
 
-    public connect(url: string, interval: number = 700) {
+    public setSocketInterval(delay: number) {
+        var self = this;
+        if (this.interval != null) {
+            clearInterval(this.interval);
+        }
+
+        this.interval = setInterval(function () {
+            self.request();
+        }, delay);
+    }
+
+    public connect(url: string) {
         this.url = url;
 
         var self = this;
 
         self.emit('connect');
 
+        self.on('connect', function (data) {
+        
+            self.setSocketInterval(data.delay);
+        });
+
+        self.on('reinterval', function (data) {
+            self.setSocketInterval(data.delay);
+        });
+
         this.request();
-        this.interval = setInterval(function () {
-            self.request();
-        }, interval);
+
     }
 
 

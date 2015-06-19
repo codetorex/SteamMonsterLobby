@@ -2,6 +2,7 @@
 /// <reference path="typings/body-parser/body-parser.d.ts" />
 /// <reference path="typings/express/express.d.ts" />
 var log = require('./Log');
+var ipfilter = require('./ipfilter');
 var express = require("express");
 var app = express();
 var port = 3700;
@@ -9,6 +10,8 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 global['config'] = require('./lobby_config');
 var config = global['config'];
+var allowedIps = config.adminIp;
+var filterMod = ipfilter(allowedIps, { mode: 'allow' });
 if (!('antispam' in config)) {
     config.antispam = 1000;
     console.log("ANTISPAM SET TO " + config.antispam);
@@ -20,7 +23,7 @@ if (!('antispamBantime' in config)) {
 app.set('views', __dirname + '/tpl');
 app.set('view engine', "jade");
 app.engine('jade', require('jade').__express);
-app.use(express.static(__dirname + '/public'));
+//app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -41,26 +44,29 @@ function randomStr(length) {
     }
     return result;
 }
-app.get("/", needLogin, function (req, res) {
+app.get("/", filterMod, needLogin, function (req, res) {
     res.render("admin", state);
 });
-app.get("/emptyRoom", function (req, res) {
+/*
+app.get("/emptyRoom", filterMod, needLogin, function (req, res) {
+    
     res.header('Access-Control-Allow-Origin', "*");
     res.header("Access-Control-Allow-Headers", "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With");
     res.header("Access-Control-Allow-Methods", "GET, PUT, POST");
-    res.sendFile('public/empty_room_finder.html', { root: __dirname });
-});
+
+    res.sendFile('public/empty_room_finder.html', { root: __dirname })
+});*/
 app.get("/client", function (req, res) {
     res.render("client");
 });
-app.post("/api/changeAntispam", needLogin, function (req, res) {
+app.post("/api/changeAntispam", filterMod, needLogin, function (req, res) {
     config.antispam = parseInt(req.body.antispam);
     console.log("ANTISPAM SET TO " + config.antispam);
     config.antispamBantime = parseInt(req.body.antispamBan);
     console.log("ANTISPAM BAN TIME SET TO " + config.antispamBantime);
     res.redirect("/");
 });
-app.post("/api/createLobby", needLogin, function (req, res) {
+app.post("/api/createLobby", filterMod, needLogin, function (req, res) {
     var l = new lobby.Lobby();
     l.name = req.body.name;
     l.limit = parseInt(req.body.limit);
@@ -70,7 +76,7 @@ app.post("/api/createLobby", needLogin, function (req, res) {
 });
 var systemplayer = new player.Player();
 systemplayer.steamName = "SYSTEM";
-app.post("/api/joinGame", needLogin, function (req, res) {
+app.post("/api/joinGame", filterMod, needLogin, function (req, res) {
     var l = state.getLobbyById(req.body.lobbyid);
     var gameid = req.body.gameid;
     log.info("Lobby " + l.name + " joining to game " + gameid);
@@ -78,7 +84,7 @@ app.post("/api/joinGame", needLogin, function (req, res) {
     l.joinGame(gameid);
     res.redirect("/");
 });
-app.post("/api/changeLobbyState", needLogin, function (req, res) {
+app.post("/api/changeLobbyState", filterMod, needLogin, function (req, res) {
     var l = state.getLobbyById(req.body.lobbyid);
     var gameid = req.body.gameid;
     log.info("Lobby " + l.name + " changing state " + gameid);
@@ -89,7 +95,7 @@ app.post("/api/changeLobbyState", needLogin, function (req, res) {
     res.redirect("/");
 });
 // display logs
-app.get("/api/logs/:count", needLogin, function (req, res) {
+app.get("/api/logs/:count", filterMod, needLogin, function (req, res) {
     var count = req.params.count;
     var length = log.logs.length;
     var start = length - count;
@@ -117,7 +123,7 @@ app.post("/api/login", function (req, res) {
     }
     res.redirect("/?failed=1");
 });
-app.get("/admin/:page", needLogin, function (req, res) {
+app.get("/admin/:page", filterMod, needLogin, function (req, res) {
     res.render(req.params.page);
 });
 function needLogin(req, res, next) {
@@ -189,14 +195,6 @@ server.on('connection', function (socket) {
             socket.emit('lobbyFull', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
         }
     });
-    socket.on('ingame', function (data) {
-        var p = state.getSteamPlayer(data.id);
-        if (p != null) {
-            p.playerMadeIntoGame(data.gameid);
-        }
-        else {
-        }
-    });
     socket.on('leaveLobby', function (data) {
         var p = socket["player"];
         if (p != null) {
@@ -207,6 +205,8 @@ server.on('connection', function (socket) {
         ;
     });
     socket.on('chat', function (data) {
+        if (server.loadFactor > 120)
+            return;
         var p = socket["player"];
         if (p != null) {
             if (p.playerLobby != null) {
@@ -215,6 +215,8 @@ server.on('connection', function (socket) {
         }
     });
     socket.on('heartbeat', function (data) {
+        if (server.loadFactor > 120)
+            return;
         var p = socket["player"];
         if (p != null) {
             var cur = new Date();
@@ -239,9 +241,6 @@ server.on('connection', function (socket) {
             }
             p.sendHello();
         }
-    });
-    socket.on('error', function (reason) {
-        console.log(reason);
     });
     socket.on('disconnect', function () {
         var p = socket["player"];

@@ -1,6 +1,7 @@
 /// <reference path="typings/validator/validator.d.ts" />
 var log = require("./Log");
 var state = require("./State");
+var validator = require('validator');
 (function (LobbyState) {
     LobbyState[LobbyState["WaitingPlayers"] = 0] = "WaitingPlayers";
     LobbyState[LobbyState["JoiningGame"] = 1] = "JoiningGame";
@@ -50,41 +51,29 @@ var Lobby = (function () {
     };
     Lobby.prototype.broadcastChatMessage = function (p, message) {
         if (p.banned) {
+            p.checkBan();
             return;
         }
-        var msg2 = { user: "SYSTEM", message: "CHAT IS DISABLED" };
-        p.playerSocket.emit('chat', msg2);
-        p.banned = true;
-        /* if (p.banned) {
-             p.checkBan();
-             return;
-         }
- 
-         var curtime = new Date().getTime();
- 
-         if (curtime - p.lastMessageTime < this.config.antispam) {
-             var msg2 = { user: "SYSTEM", message: "ANTISPAM ENABLED FOR " + this.config.antispamBantime / 1000 + " SECOND" };
-             p.playerSocket.emit('chat', msg2);
-             p.banPlayer(this.config.antispamBantime); // ban for 1 second
-             return;
-         }
- 
-         p.lastMessageTime = curtime;
- 
-         if (message.length > 160) {
-             message = message.substring(0, 160);
-         }
- 
-         var escapedName = validator.escape(p.steamName);
-         var escapedMessage = validator.escape(message);
-         var msg = { user: escapedName, message: escapedMessage };
- 
-         for (var i = 0; i < this.players.length; i++) {
-             var curPlayer: player.Player = this.players[i];
-             if (curPlayer.playerSocket == null) continue;
-             
-             curPlayer.playerSocket.emit('chat',  msg);
-         }*/
+        var curtime = new Date().getTime();
+        if (curtime - p.lastMessageTime < this.config.antispam) {
+            var msg2 = { user: "SYSTEM", message: "ANTISPAM ENABLED FOR " + this.config.antispamBantime / 1000 + " SECOND" };
+            p.playerSocket.emit('chat', msg2);
+            p.banPlayer(this.config.antispamBantime); // ban for 1 second
+            return;
+        }
+        p.lastMessageTime = curtime;
+        if (message.length > 160) {
+            message = message.substring(0, 160);
+        }
+        var escapedName = validator.escape(p.steamName);
+        var escapedMessage = validator.escape(message);
+        var msg = { user: escapedName, message: escapedMessage };
+        for (var i = 0; i < this.players.length; i++) {
+            var curPlayer = this.players[i];
+            if (curPlayer.playerSocket == null)
+                continue;
+            curPlayer.playerSocket.emit('chat', msg);
+        }
     };
     Lobby.prototype.leavePlayer = function (p) {
         log.info("Player " + p.steamName + " leaved lobby " + this.name);

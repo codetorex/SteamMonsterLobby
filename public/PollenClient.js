@@ -70,8 +70,11 @@ Emitter.prototype.hasListeners = function (event) {
 };
 var GreaseMonkeyRequester = (function () {
     function GreaseMonkeyRequester() {
+        this.isrequesting = false;
     }
     GreaseMonkeyRequester.prototype.request = function (url, data, callback) {
+        this.isrequesting = true;
+        var self = this;
         GM_xmlhttpRequest({
             method: "POST",
             url: url,
@@ -81,6 +84,7 @@ var GreaseMonkeyRequester = (function () {
             },
             onload: function (response) {
                 callback(response.responseText);
+                self.isrequesting = false;
             }
         });
     };
@@ -88,6 +92,7 @@ var GreaseMonkeyRequester = (function () {
 })();
 var PollenClient = (function () {
     function PollenClient(requester) {
+        this.interval = null;
         this.packets = [];
         this.domain = '/pollen/';
         this.internalEvents = {};
@@ -127,15 +132,26 @@ var PollenClient = (function () {
             self.received(data);
         });
     };
-    PollenClient.prototype.connect = function (url, interval) {
-        if (interval === void 0) { interval = 700; }
+    PollenClient.prototype.setSocketInterval = function (delay) {
+        var self = this;
+        if (this.interval != null) {
+            clearInterval(this.interval);
+        }
+        this.interval = setInterval(function () {
+            self.request();
+        }, delay);
+    };
+    PollenClient.prototype.connect = function (url) {
         this.url = url;
         var self = this;
         self.emit('connect');
+        self.on('connect', function (data) {
+            self.setSocketInterval(data.delay);
+        });
+        self.on('reinterval', function (data) {
+            self.setSocketInterval(data.delay);
+        });
         this.request();
-        this.interval = setInterval(function () {
-            self.request();
-        }, interval);
     };
     return PollenClient;
 })();

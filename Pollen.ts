@@ -32,7 +32,17 @@ export class PollenSocket {
 export class PollenServer extends events.EventEmitter {
     public app: express.Express;
 
-    public sockets:PollenSocket[] = [];
+    public sockets: PollenSocket[] = [];
+    public maxRequestsPerSecond: number = 500; // adjust delay with this
+
+    public avgResponseTime: number = 0;
+    public clientInterval: number = 1500;
+
+    public requestCounter: number = 0;
+    public lastRequestCheck: number = 0;
+
+    public requestSpeed: number = 0;
+    public loadFactor: number = 0;
 
     public getSocket(id) {
         return this.sockets[id];
@@ -43,7 +53,9 @@ export class PollenServer extends events.EventEmitter {
         var self = this;
         
         this.app.post('/pollen/:socket', function (req, res) {
-            
+
+            self.requestCounter++;
+
             var id = req.params.socket;
 
             var body = req.body;
@@ -53,10 +65,10 @@ export class PollenServer extends events.EventEmitter {
                 sck = new PollenSocket();
                 sck.socketId = id;
                 sck.on('connect', function (data) {
-                    sck.emit('connect', { resuming: true });
+                    sck.emit('connect', { resuming: true, delay: self.clientInterval });
                 });
 
-                sck.emit('connect', { resuming: false });
+                sck.emit('connect', { resuming: false , delay: self.clientInterval});
                 self.sockets[id] = sck;
 
                 self.emit('connection', sck);
@@ -75,6 +87,44 @@ export class PollenServer extends events.EventEmitter {
             res.json([]);
         });
 
+        // calculate server load
+        setInterval(function () {
+            self.requestSpeed = self.requestCounter - self.lastRequestCheck;
+            self.lastRequestCheck = self.requestCounter;
+            self.loadFactor = Math.ceil((self.requestSpeed / self.maxRequestsPerSecond) * 100);
+            console.log("ReqPsec: " + self.requestSpeed + " LoadF: " + self.loadFactor + " Reqs: " + self.requestCounter + ' CI:' + self.clientInterval);
+            if (self.loadFactor > 200) {
+
+                // slow down in half
+                self.clientInterval = Math.ceil(self.clientInterval * 2);
+
+                console.log('Slowing down client intervals to: ' + self.clientInterval);
+
+                // slow people down
+                for (var s in self.sockets) {
+                    var sck = self.sockets[s];
+                    sck.emit('reinterval', {delay: self.clientInterval});
+                }
+            }
+            if (self.loadFactor < 100) {
+                // slow down in %30
+                var newInterval = Math.ceil(self.clientInterval / 1.30);
+                
+
+                if (newInterval > 500) {
+                    self.clientInterval = newInterval;
+                    console.log('Speeding up client intervals to: ' + self.clientInterval);
+
+                    // slow people down
+                    for (var s in self.sockets) {
+                        var sck = self.sockets[s];
+                        sck.emit('reinterval', { delay: self.clientInterval });
+                    }
+                }
+            }
+        }, 1000);
+
+        // purge dead sockets
         setInterval(function () {
 
             var purgeList = [];

@@ -2,7 +2,7 @@
 // @name Reddit Botnet Lobby
 // @namespace https://github.com/wchill/steamSummerMinigame
 // @description A script that joins the Steam Monster Minigame for you.
-// @version 1.8.5
+// @version 1.9.5
 // @match *://steamcommunity.com/minigame*
 // @match *://steamcommunity.com//minigame*
 // @match *://steamcommunity.com/minigame/towerattack*
@@ -92,9 +92,11 @@ try {
     };
     var GreaseMonkeyRequester = (function () {
         function GreaseMonkeyRequester() {
+            this.isrequesting = false;
         }
         GreaseMonkeyRequester.prototype.request = function (url, data, callback) {
-            
+            this.isrequesting = true;
+            var self = this;
             GM_xmlhttpRequest({
                 method: "POST",
                 url: url,
@@ -104,6 +106,7 @@ try {
                 },
                 onload: function (response) {
                     callback(response.responseText);
+                    self.isrequesting = false;
                 }
             });
         };
@@ -111,6 +114,7 @@ try {
     })();
     var PollenClient = (function () {
         function PollenClient(requester) {
+            this.interval = null;
             this.packets = [];
             this.domain = '/pollen/';
             this.internalEvents = {};
@@ -150,15 +154,26 @@ try {
                 self.received(data);
             });
         };
-        PollenClient.prototype.connect = function (url, interval) {
-            if (interval === void 0) { interval = 700; }
-            this.url = url;
+        PollenClient.prototype.setSocketInterval = function (delay) {
             var self = this;
-            self.emit('connect', {});
-            this.request();
+            if (this.interval != null) {
+                clearInterval(this.interval);
+            }
             this.interval = setInterval(function () {
                 self.request();
-            }, interval);
+            }, delay);
+        };
+        PollenClient.prototype.connect = function (url) {
+            this.url = url;
+            var self = this;
+            self.emit('connect');
+            self.on('connect', function (data) {
+                self.setSocketInterval(data.delay);
+            });
+            self.on('reinterval', function (data) {
+                self.setSocketInterval(data.delay);
+            });
+            this.request();
         };
         return PollenClient;
     })();
