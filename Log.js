@@ -5,7 +5,7 @@ function push(value) {
 }
 exports.push = push;
 function info(value) {
-    push("[INFO] " + value);
+    //push( "[INFO] " + value);
 }
 exports.info = info;
 //# sourceMappingURL=Log.js.map

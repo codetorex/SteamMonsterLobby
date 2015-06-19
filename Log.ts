@@ -7,5 +7,5 @@ export function push(value: string) {
 }
 
 export function info(value: string) {
-    push( "[INFO] " + value);
+    //push( "[INFO] " + value);
 }
