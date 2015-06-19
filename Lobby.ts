@@ -78,6 +78,8 @@ export class Lobby {
         this.gameId = gameid;
         this.lobbyStatus = LobbyState.JoiningGame;
 
+        state.globalState.updateLobbyDataObject();
+
         for (var i = 0; i < this.players.length; i++) {
             var curPlayer: player.Player = this.players[i];
             if (curPlayer.playerSocket == null) continue;

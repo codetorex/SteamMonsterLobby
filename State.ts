@@ -123,10 +123,10 @@ export class StateManager {
     public playerDisconnected(p: player.Player) {
         p.leaveLobby();
 
-        var i = this.players.indexOf(p);
+        /*var i = this.players.indexOf(p);
         if (i != -1) {
             this.players.splice(i, 1);
-        }
+        }*/
 
         log.info("Player disconnected: " + p.steamName);
     }

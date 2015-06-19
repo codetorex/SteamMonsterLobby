@@ -55,6 +55,7 @@ var Lobby = (function () {
         }
         this.gameId = gameid;
         this.lobbyStatus = 1 /* JoiningGame */;
+        state.globalState.updateLobbyDataObject();
         for (var i = 0; i < this.players.length; i++) {
             var curPlayer = this.players[i];
             if (curPlayer.playerSocket == null)
