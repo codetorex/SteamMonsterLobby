@@ -187,7 +187,7 @@ server.on('connection', function (socket) {
         if (p != null) {
             var cur = new Date();
             p.lastHeartBeat = cur.getTime();
-            if (typeof data != "undefined") {
+            if (typeof data != "undefined" && data != null) {
                 if ("likenews" in data && "wormholes" in data) {
                     if (!validator.isInt(data.likenews) || !validator.isInt(data.wormholes)) {
                         log.info("Troll detected: " + p.steamName);
