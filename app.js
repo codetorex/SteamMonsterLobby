@@ -55,10 +55,11 @@ app.get("/emptyRoom", filterMod, needLogin, function (req, res) {
     res.header("Access-Control-Allow-Methods", "GET, PUT, POST");
 
     res.sendFile('public/empty_room_finder.html', { root: __dirname })
-});*/
+});
+
 app.get("/client", function (req, res) {
     res.render("client");
-});
+});*/
 app.post("/api/changeAntispam", filterMod, needLogin, function (req, res) {
     config.antispam = parseInt(req.body.antispam);
     console.log("ANTISPAM SET TO " + config.antispam);

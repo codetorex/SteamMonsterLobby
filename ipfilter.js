@@ -57,7 +57,7 @@ module.exports = function ipfilter(ips, opts) {
     });
 
     var getClientIp = function(req) {
-        var ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        var ipAddress = req.connection.remoteAddress;
         if (ipAddress.indexOf('::ffff:') == 0)
             ipAddress = ipAddress.substr(7);
 
