@@ -1,10 +1,10 @@
 
 console.log("Initializing lobby script...");
 
-var lobbyScriptVersion = '3.0.5';
+var lobbyScriptVersion = '3.1.4';
 
-var server_address = 'http://localhost:3900';
-//var server_address = 'http://188.166.36.23:3900';
+//var server_address = 'http://localhost:3900';
+var server_address = 'http://188.166.36.23:3900';
 
 var lobbyRun = function ($) {
     
