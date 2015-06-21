@@ -1,8 +1,17 @@
 ﻿
 
 import pollen = require('./Pollen');
-import lobby = require("./Lobby");
 import state = require("./State");
+import game = require("./Game");
+
+export enum PlayerState {
+    Waiting,
+    Selected,
+    Joining,
+    Loading,
+    InCorrectGame,
+    InWrongGame,
+}
 
 export class Player {
     public steamName: string;
@@ -11,72 +20,93 @@ export class Player {
     public lastHeartBeat: number;
 
     public playerSocket: pollen.PollenSocket;
-    public playerLobby: lobby.Lobby = null; // each player can only have one lobby
 
-    public currentPlayerGameId;
+    public state: PlayerState = PlayerState.Waiting;
 
     public likenewCount: number = 0;
     public wormholeCount: number = 0;
 
-    public banned: boolean = false;
-    public banTime: number;
-    public banDuration: number;
-    public banExpiration: number;
+    public playerGame: game.Game = null;
+    public playerMustGame: game.Game = null;
 
     public lastMessageTime: number;
-    
-    public banPlayer(duration: number) {
-        this.banned = true;
-        this.banTime = new Date().getTime();
-        this.banDuration = duration;
-        this.banExpiration = this.banTime + this.banDuration;
-    }
+    public score: number;
 
-    public checkBan() {
-        if (!this.banned) return;
+    public joinIssueStamp: number;
+    public joinTimeout: number = 150000; // time out as milliseconds
 
-        var curTime = new Date().getTime();
-        if (this.banExpiration < curTime) {
-            this.banned = false;
-        }
-    }
+    public loadingTimeout: number = 10000;
 
-    public leaveLobby() {
-        if (this.playerLobby != null) {
-            this.playerLobby.leavePlayer(this);
-        }
-    }
+    // timeout in seconds
+    public joinGame(gameId, timeout: number) {
 
-    public joinGame(gameId) {
+        this.playerMustGame = state.globalState.getOrCreateGame(gameId);
+        this.state = PlayerState.Joining;
+
+        this.joinTimeout = timeout * 1000;
+        this.joinIssueStamp = new Date().getTime();
+
         this.playerSocket.emit("joinGame", { id: gameId });
     }
 
-    public sendHello() {
-
-
-        if (this.playerSocket == null) return;
-
-        var inLobby = this.playerLobby != null;
-
-        var helloData:any = {};
-        helloData.alreadyInLobby = inLobby;
-
-        if (inLobby) {
-            var lobby = this.playerLobby;
-            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length, state: lobby.lobbyStatus ,gameid: lobby.gameId, wormholes: lobby.wormholeCount, likenews: lobby.likenewCount };
-            for (var k in lobbyData) helloData[k] = lobbyData[k];
+    public playerLeavedGame() {
+        if (this.playerGame != null) {
+            this.playerGame = null;
+            this.state = PlayerState.Waiting;
         }
-        else {
-            var lobbyData2 = state.globalState.lobbyData;
-            helloData.lobbies = state.globalState.lobbyData;
-            //for (var k in lobbyData2) helloData[k] = lobbyData2[k];
-        }
-
-        this.playerSocket.emit("hello", helloData);
-        
     }
 
-    public playerMadeIntoGame(gameid) {
-        this.currentPlayerGameId = gameid;
+    public sendHello() {
+        if (this.playerSocket == null) return;
+
+        var helloData = {}
+        
+        helloData['state'] = this.state;
+
+        if (this.playerMustGame != null) {
+            helloData['gameid'] = this.playerMustGame.roomId;
+        }
+
+        if (this.playerGame != null) {
+            helloData['wormholes'] = this.playerGame.wormholeCount;
+            helloData['likenews'] = this.playerGame.likenewCount;
+            helloData['brothers'] = this.playerGame.knownPlayerCount;
+        }
+        
+        if (this.state == PlayerState.Joining) {
+            var curTime = new Date().getTime();
+            if (curTime - this.joinIssueStamp > this.joinTimeout) {
+                this.state = PlayerState.Loading;
+            }
+        }
+
+        helloData['playerCount'] = state.globalState.totalActivePlayers;
+        helloData['playersInGame'] = state.globalState.totalPlayersInGame;
+        
+        this.playerSocket.emit("hello", helloData); // what do we need to update anyway?
+    }
+
+    public playerMadeIntoGame(gameid: number) {
+        if (this.playerGame == null) {
+            var g: game.Game = state.globalState.getOrCreateGame(gameid);
+            if (g.gameType == game.GameType.Offical) {
+                this.playerMustGame = g;
+                this.playerGame = g;
+                this.state = PlayerState.InCorrectGame;
+                return;
+            }
+        }
+
+        if (this.playerMustGame != null && gameid == this.playerMustGame.roomId) {
+            this.state = PlayerState.InCorrectGame;
+        }
+        else {
+            this.state = PlayerState.InWrongGame;
+        }
+
+        if (this.playerGame != null && this.playerGame.roomId == gameid) return;
+
+        var g: game.Game = state.globalState.getOrCreateGame(gameid);
+        this.playerGame = g;
     }
 }

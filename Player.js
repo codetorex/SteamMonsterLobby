@@ -1,53 +1,81 @@
 var state = require("./State");
+var game = require("./Game");
+(function (PlayerState) {
+    PlayerState[PlayerState["Waiting"] = 0] = "Waiting";
+    PlayerState[PlayerState["Selected"] = 1] = "Selected";
+    PlayerState[PlayerState["Joining"] = 2] = "Joining";
+    PlayerState[PlayerState["Loading"] = 3] = "Loading";
+    PlayerState[PlayerState["InCorrectGame"] = 4] = "InCorrectGame";
+    PlayerState[PlayerState["InWrongGame"] = 5] = "InWrongGame";
+})(exports.PlayerState || (exports.PlayerState = {}));
+var PlayerState = exports.PlayerState;
 var Player = (function () {
     function Player() {
-        this.playerLobby = null; // each player can only have one lobby
+        this.state = 0 /* Waiting */;
         this.likenewCount = 0;
         this.wormholeCount = 0;
-        this.banned = false;
+        this.playerGame = null;
+        this.playerMustGame = null;
+        this.joinTimeout = 150000; // time out as milliseconds
+        this.loadingTimeout = 10000;
     }
-    Player.prototype.banPlayer = function (duration) {
-        this.banned = true;
-        this.banTime = new Date().getTime();
-        this.banDuration = duration;
-        this.banExpiration = this.banTime + this.banDuration;
-    };
-    Player.prototype.checkBan = function () {
-        if (!this.banned)
-            return;
-        var curTime = new Date().getTime();
-        if (this.banExpiration < curTime) {
-            this.banned = false;
-        }
-    };
-    Player.prototype.leaveLobby = function () {
-        if (this.playerLobby != null) {
-            this.playerLobby.leavePlayer(this);
-        }
-    };
-    Player.prototype.joinGame = function (gameId) {
+    // timeout in seconds
+    Player.prototype.joinGame = function (gameId, timeout) {
+        this.playerMustGame = state.globalState.getOrCreateGame(gameId);
+        this.state = 2 /* Joining */;
+        this.joinTimeout = timeout * 1000;
+        this.joinIssueStamp = new Date().getTime();
         this.playerSocket.emit("joinGame", { id: gameId });
+    };
+    Player.prototype.playerLeavedGame = function () {
+        if (this.playerGame != null) {
+            this.playerGame = null;
+            this.state = 0 /* Waiting */;
+        }
     };
     Player.prototype.sendHello = function () {
         if (this.playerSocket == null)
             return;
-        var inLobby = this.playerLobby != null;
         var helloData = {};
-        helloData.alreadyInLobby = inLobby;
-        if (inLobby) {
-            var lobby = this.playerLobby;
-            var lobbyData = { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length, state: lobby.lobbyStatus, gameid: lobby.gameId, wormholes: lobby.wormholeCount, likenews: lobby.likenewCount };
-            for (var k in lobbyData)
-                helloData[k] = lobbyData[k];
+        helloData['state'] = this.state;
+        if (this.playerMustGame != null) {
+            helloData['gameid'] = this.playerMustGame.roomId;
         }
-        else {
-            var lobbyData2 = state.globalState.lobbyData;
-            helloData.lobbies = state.globalState.lobbyData;
+        if (this.playerGame != null) {
+            helloData['wormholes'] = this.playerGame.wormholeCount;
+            helloData['likenews'] = this.playerGame.likenewCount;
+            helloData['brothers'] = this.playerGame.knownPlayerCount;
         }
-        this.playerSocket.emit("hello", helloData);
+        if (this.state == 2 /* Joining */) {
+            var curTime = new Date().getTime();
+            if (curTime - this.joinIssueStamp > this.joinTimeout) {
+                this.state = 3 /* Loading */;
+            }
+        }
+        helloData['playerCount'] = state.globalState.totalActivePlayers;
+        helloData['playersInGame'] = state.globalState.totalPlayersInGame;
+        this.playerSocket.emit("hello", helloData); // what do we need to update anyway?
     };
     Player.prototype.playerMadeIntoGame = function (gameid) {
-        this.currentPlayerGameId = gameid;
+        if (this.playerGame == null) {
+            var g = state.globalState.getOrCreateGame(gameid);
+            if (g.gameType == 1 /* Offical */) {
+                this.playerMustGame = g;
+                this.playerGame = g;
+                this.state = 4 /* InCorrectGame */;
+                return;
+            }
+        }
+        if (this.playerMustGame != null && gameid == this.playerMustGame.roomId) {
+            this.state = 4 /* InCorrectGame */;
+        }
+        else {
+            this.state = 5 /* InWrongGame */;
+        }
+        if (this.playerGame != null && this.playerGame.roomId == gameid)
+            return;
+        var g = state.globalState.getOrCreateGame(gameid);
+        this.playerGame = g;
     };
     return Player;
 })();

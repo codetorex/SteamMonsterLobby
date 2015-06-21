@@ -54,6 +54,7 @@ export class PollenServer extends events.EventEmitter {
         var self = this;
         
         this.app.post('/pollen/:socket', function (req, res) {
+            res.header("Connection", "close");
 
             self.requestCounter++;
 
@@ -86,6 +87,7 @@ export class PollenServer extends events.EventEmitter {
             }
 
             res.json([]);
+            
         });
 
         // calculate server load

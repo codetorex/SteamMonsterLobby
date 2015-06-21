@@ -7,6 +7,24 @@ html
 		link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css')
 		link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css')
 		script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js')
+		style.
+			#anns .usr {
+				margin-right: 10px;
+				color: darkorange;
+			}
+
+			.games button{
+				position: absolute;
+				height: 80%;
+				top:10%;
+				right: 10px;
+			}
+
+			.val {
+				margin-left: 5px;
+				margin-right: 10px;
+			}
+
 	body
 		nav.navbar.navbar-inverse
 			div.container
@@ -19,69 +37,51 @@ html
 						a Players 
 							span.badge=players.length
 					li 
-						a Lobbies 
-							span.badge=lobbies.length
+						a Games 
+							span.badge=games.length
 
 		div.container
 			div.col-sm-12.well#tools
-				button.btn.btn-lg.btn-default(data-toggle="modal",data-target="#create-lobby-modal")
-					span.glyphicon.glyphicon-plus
-					|  Create Lobby
-				button.btn.btn-lg.btn-default(data-toggle="modal",data-target="#set-antispam")
-					span.glyphicon.glyphicon-filter
-					|  Set Antispam Settings
-					
-			div.col-sm-6
-				h4 Current Lobbies
-				div.list-group.lobbies
-					each lobby in lobbies
-						a.list-group-item.lobby(data-id=lobby.id)
-							h4.list-group-item-heading=lobby.name
-							p.list-group-item-text
-								span=lobby.players.length
-								span &nbsp;/&nbsp;
-								span.val=lobby.limit
-								span Lobby State 
-								span.val.badge.btn-info=lobby.lobbyStatus
-								span Wormholes 
-								span.val.badge.btn-info=lobby.wormholeCount
-								span Likenews 
-								span.val.badge.btn-info=lobby.likenewCount
-								span Game Id 
-								span.val.badge.btn-info=lobby.gameId
-			
-			div.col-sm-6
-				h4 System Log				
-				pre#logbox.
-					Hello	
-
-			div.col-sm-12.well#lobbyControlPanel(style="display:none;")
-				h4 Lobby Control Panel
-				h4#controlLobbyLabel(style="color:red;") Lobby Name
-				button.btn.btn-lg.btn-default#joinGameButton
+				button.btn.btn-lg.btn-default(data-toggle="modal",data-target="#join-lobby-modal")
 					span.glyphicon.glyphicon-send
 					|  Join Game
-				button.btn.btn-lg.btn-default#setLobbyRoom
-					span.glyphicon.glyphicon-edit
-					|  Change Lobby State
+			
+			div.col-sm-12
+				h4 Current Offical Games
+				div.list-group.games
+					each game, key in games
+						if game.gameType == 1
+							a.list-group-item.lobby(data-id=game.id)
+								h4.list-group-item-heading=game.name
+								p.list-group-item-text
+									span Known Players
+									span.val.badge.btn-info=game.knownPlayerCount
+									span Wormholes 
+									span.val.badge.btn-info=game.wormholeCount
+									span Likenews 
+									span.val.badge.btn-info=game.likenewCount
+									span Game Id 
+									span.val.badge.btn-info=game.roomId
+									span Game Level 
+									span.val.badge.btn-info=game.level
+									span Game Type 
+									span.val.badge.btn-info=game.gameType
+								button.btn.btn-danger.abandoner(type="button") Abandon
 
-		div.modal.fade#create-lobby-modal(tabindex="-1")
-			div.modal-dialog
-				div.modal-content
-					div.modal-header
-						button.close(data-dismiss="modal",aria-label="Close") &times;
-						h4.modal-title Create Lobby
-					div.modal-body
-						form#create-lobby-form(method="post", action="/api/createLobby")
-							div.form-group
-								label Lobby Name
-								input.form-control(name="name", type="text", placeholder="Matrix Lobby")
-							div.form-group
-								label Max Player Count
-								input.form-control(name="limit", type="text", placeholder="1500")
-					div.modal-footer
-						button.btn.btn-default(data-dismiss="modal") Close
-						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Create
+				h4 Current Unoffical Games
+					span.val.badge.btn-info=unofficalGames
+
+
+
+			div.col-sm-12
+				h4 Announcement
+				div.well#anns(style="height:200px;")
+				div.col-sm-8
+					input.form-control#annmsg(type="text",value="",placeholder="Message")
+				div.col-sm-4
+					input.form-control#annusr(type="text",value="havenoammo")
+
+
 
 		div.modal.fade#join-lobby-modal(tabindex="-1")
 			div.modal-dialog
@@ -92,56 +92,21 @@ html
 					div.modal-body
 						form#create-lobby-form(method="post", action="/api/joinGame")
 							div.form-group
-								label Lobby Name
-								input.form-control#lobbyNameText(name="lobbyname", type="text", value="00000",readonly)
+								label Game Name
+								input.form-control(name="name", type="text", value="MSG215 Room #1")
 							div.form-group
-								label Lobby Id
-								input.form-control#lobbyIdText(name="lobbyid", type="text", value="00000",readonly)
+								label Player Count
+								input.form-control(name="count", type="text", value="1475")
 							div.form-group
 								label Game Id
 								input.form-control(name="gameid", type="text", placeholder="00000")
+							div.form-group
+								label Retry Timeout (seconds)
+								input.form-control(name="retry", type="text", value="120")
+
 					div.modal-footer
 						button.btn.btn-default(data-dismiss="modal") Close
 						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Join
-
-		div.modal.fade#change-state-modal(tabindex="-1")
-			div.modal-dialog
-				div.modal-content
-					div.modal-header
-						button.close(data-dismiss="modal",aria-label="Close") &times;
-						h4.modal-title Change Lobby State
-					div.modal-body
-						form#create-lobby-form(method="post", action="/api/changeLobbyState")
-							div.form-group
-								label Lobby Name
-								input.form-control#lobbyNameText2(name="lobbyname", type="text", value="00000",readonly)
-							div.form-group
-								label Lobby Id
-								input.form-control#lobbyIdText2(name="lobbyid", type="text", value="00000",readonly)
-							div.form-group
-								label Game Id
-								input.form-control(name="gameid", type="text", placeholder="00000")
-					div.modal-footer
-						button.btn.btn-default(data-dismiss="modal") Close
-						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Change
-
-		div.modal.fade#set-antispam(tabindex="-1")
-			div.modal-dialog
-				div.modal-content
-					div.modal-header
-						button.close(data-dismiss="modal",aria-label="Close") &times;
-						h4.modal-title Change Antispam Times
-					div.modal-body
-						form#antispam-form(method="post", action="/api/changeAntispam")
-							div.form-group
-								label Antispam Timer (in milliseconds)
-								input.form-control(name="antispam", type="text", placeholder="1000")
-							div.form-group
-								label Ban Time (in milliseconds)
-								input.form-control(name="antispamBan", type="text", placeholder="1000")
-					div.modal-footer
-						button.btn.btn-default(data-dismiss="modal") Close
-						button.btn.btn-primary.btn-ok(name="submit", type="submit", value="") Set
 			
 		script.
 			$(document).ready( function(){
@@ -149,47 +114,50 @@ html
 					$(this).closest('.modal').find('form').submit();
 				});
 
-				$('.lobbies .lobby').click(function(){
-					$('.lobbies .lobby').removeClass('active');
-					$('#lobbyControlPanel').slideUp();
+				function apicall(api, data, ok )
+				{
+					if (typeof ok === "undefined")
+					{
+						ok = function() {
+							location.reload();
+						}
+					}
 
-					var mlobby = $(this).closest('.lobby');
-					mlobby.addClass('active');
-					var lobbyId = mlobby.attr('data-id');
-					var lobbyName = mlobby.find('.list-group-item-heading').text();
-
-
-					$('#lobbyControlPanel').slideDown();
-					var mlabel =$('#controlLobbyLabel');
-					mlabel.text( lobbyName );
-					mlabel.attr('data-id', lobbyId);
-
-
-					$('#joinGameButton').off('click').click(function(){
-						$('#lobbyNameText').attr('value', lobbyName );
-						$('#lobbyIdText').attr('value', lobbyId );
-						$('#join-lobby-modal').modal('show');
+					$.ajax({
+						type: "POST",
+						url:'/api/' + api, 
+						data: data,
+						dataType: 'json' 
+					}).done(function( data ){
+						ok(data);
 					});
+				}
 
-					$('#setLobbyRoom').off('click').click(function(){
-						$('#lobbyNameText2').attr('value', lobbyName );
-						$('#lobbyIdText2').attr('value', lobbyId );
-						$('#change-state-modal').modal('show');
-					});
+				$('.abandoner').click(function(){
+					var gm = $(this).closest('.lobby');
+					var gmId = parseInt( gm.attr('data-id') );
+					apicall('kickall', { gameid: gmId } );
 				});
 
-				
-				
-				var fetching = false;
-				setInterval(function(){
-					if (fetching)
-						return;
 
-					fetching = true;
-					$.ajax({url:'/api/logs/20'}).done(function( data ){
-						$('#logbox').html( data );
-						fetching = false;
+				function sendChat() {
+					var usr = $('#annusr').val();
+					var msg = $('#annmsg').val();
+
+					apicall('announcement',  {usr: usr, msg: msg}, function( data ){
+						if (data.status == 'ok')
+						{
+							$('#anns').append('<div class="message"><span class="usr">' + usr + '</span><span>' + msg + '</span></div>');
+						}
 					});
 
-				}, 2000);
+					//socket.emit('chat', { message: msg });
+					$('#annmsg').val('');
+				}
+
+				$('#annmsg').keyup(function (e) {
+					if (e.keyCode == 13) {
+						sendChat();
+					}
+				});
 			});

@@ -49,6 +49,7 @@ var PollenServer = (function (_super) {
     PollenServer.prototype.start = function () {
         var self = this;
         this.app.post('/pollen/:socket', function (req, res) {
+            res.header("Connection", "close");
             self.requestCounter++;
             var id = req.params.socket;
             var body = req.body;

@@ -1,4 +1,4 @@
-﻿
+﻿/// <reference path="../typings/jquery/jquery.d.ts" />
 
 function Emitter(obj) {
     if (obj) return mixin(obj);
@@ -90,7 +90,7 @@ Emitter.prototype.hasListeners = function (event) {
 
 interface PollenRequester {
     isrequesting: boolean;
-    request(url: string, data: string, callback: Function);
+    request(url: string, data: string, timeout: number, callback: Function, fail: Function);
 }
 
 declare var GM_xmlhttpRequest: any;
@@ -98,21 +98,55 @@ declare var GM_xmlhttpRequest: any;
 class GreaseMonkeyRequester implements PollenRequester {
     public isrequesting: boolean = false;
 
-    public request(url: string, data: string, callback: Function) {
+    public request(url: string, data: string, timeout: number, callback: Function, fail: Function) {
         this.isrequesting = true;
         var self = this;
         GM_xmlhttpRequest({
             method: "POST",
             url: url,
             data: data,
+            timeout: timeout,
             headers: {
                 "Content-Type": "application/json"
             },
             onload: function (response) {
                 callback(response.responseText);
                 self.isrequesting = false;
-            }
+            },
+            ontimeout: function (response) {
+                fail(response);
+                self.isrequesting = false;
+            },
+            onerror: function (response) {
+                fail(response);
+                self.isrequesting = false;
+            },
         });
+    }
+}
+
+class XMLHttpRequester implements PollenRequester {
+    public isrequesting: boolean = false;
+    public request(url: string, data: string, timeout: number, callback: Function, fail: Function) {
+        this.isrequesting = true;
+        var self = this;
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function () {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                callback(xmlhttp.responseText);
+            }
+            self.isrequesting = false;
+        }
+
+        xmlhttp.onerror = function () {
+            fail(xmlhttp);
+            self.isrequesting = false;
+        }
+
+        xmlhttp.open("POST", url, true);
+        xmlhttp.setRequestHeader("Content-Type", "application/json");
+        xmlhttp.send(data);
     }
 }
 
@@ -127,8 +161,11 @@ class PollenClient {
     public internalEvents: any = {};
     public requester: PollenRequester;
 
+    public connected: boolean = false;
+    public reconnecting: boolean = false;
 
     public emit(event: string, data?: any) {
+        if (!this.connected) return;
         this.packets.push({ event: event, data: data });
     }
 
@@ -137,7 +174,13 @@ class PollenClient {
     }
 
     public received(body: string) {
-        var packets = JSON.parse(body);
+        var packets;
+        if (typeof body == "string") {
+            packets = JSON.parse(body);
+        }
+        else {
+            packets = body;
+        }
 
         for (var i = 0; i < packets.length; i++) {
             var s = packets[i];
@@ -161,10 +204,26 @@ class PollenClient {
         var body = JSON.stringify(this.packets);
         this.packets = [];
         var self = this;
-
-        this.requester.request(this.url + this.domain + this.socketId, body , function (data) {
+        var timeout = 10000;
+        if (this.reconnecting == true || this.connected) {
+            timeout = 0;
+        }
+        this.requester.request(this.url + this.domain + this.socketId, body, timeout, function (data) {
             self.received(data);
-        }); 
+        }, function () {
+                if (self.reconnecting == false) {
+                    if (self.connected) {
+                        self.internalEvents.emit('disconnected');
+                        self.connected = false;
+                    }
+                    else {
+                        self.internalEvents.emit('offline');
+                    }
+                }
+                else {
+                    self.request();
+                }
+            });
     }
 
     public setSocketInterval(delay: number) {
@@ -180,30 +239,36 @@ class PollenClient {
 
     public connect(url: string) {
         this.url = url;
+        this.emit('connect');
+        this.request();
+    }
+
+    public reconnect() {
+        this.reconnecting = true;
+        this.packets = [];
+        this.emit('connect');
+        this.request();
+    }
+
+
+    public constructor(requester: PollenRequester) {
+        Emitter(this.internalEvents);
+        this.requester = requester;
+        this.socketId = this.randomStr(16);
 
         var self = this;
-
-        self.emit('connect');
-
         self.on('connect', function (data) {
-        
             self.setSocketInterval(data.delay);
+            self.reconnecting = false;
+            self.connected = true;
         });
 
         self.on('reinterval', function (data) {
             self.setSocketInterval(data.delay);
         });
-
-        this.request();
-
-    }
-
-
-    public constructor(requester:PollenRequester) {
-        Emitter(this.internalEvents);
-        this.requester = requester;
-        this.socketId = this.randomStr(16);
     }
 }
 
-var socket: PollenClient = new PollenClient(new GreaseMonkeyRequester());
+var socket: PollenClient = new PollenClient(new XMLHttpRequester());
+
+

@@ -34,14 +34,13 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="public\empty_room_finder.html" />
     <Content Include="public\style.css" />
     <Content Include="tpl\admin.jade" />
     <Content Include="tpl\login.jade" />
     <TypeScriptCompile Include="app.ts" />
     <Content Include="package.json" />
     <Content Include="README.md" />
-    <TypeScriptCompile Include="Lobby.ts" />
+    <TypeScriptCompile Include="Game.ts" />
     <TypeScriptCompile Include="Log.ts" />
     <TypeScriptCompile Include="Player.ts" />
     <TypeScriptCompile Include="Pollen.ts" />
@@ -55,6 +54,7 @@
   <ItemGroup>
     <Compile Include="lobby_config.js" />
     <Compile Include="ipfilter.js" />
+    <Compile Include="public\LocalHostLoader.user.js" />
     <Compile Include="public\MonsterLobby.user.js" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->

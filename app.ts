@@ -1,6 +1,7 @@
 ﻿/// <reference path="typings/node/node.d.ts" />
 /// <reference path="typings/body-parser/body-parser.d.ts" />
 /// <reference path="typings/express/express.d.ts" />
+/// <reference path="typings/validator/validator.d.ts" />
 
 import net = require('net');
 import fs = require('fs');
@@ -10,7 +11,7 @@ var ipfilter = require('./ipfilter');
 
 import express = require("express");
 var app = express();
-var port = 3800;
+var port = 3900;
 import bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 
@@ -21,16 +22,6 @@ var config = global['config'];
 var allowedIps = config.adminIp;
 var filterMod = ipfilter(allowedIps, { mode: 'allow' });
 
-if (!('antispam' in config)) {
-    config.antispam = 1000;
-    console.log("ANTISPAM SET TO " + config.antispam);
-}
-
-if (!('antispamBantime' in config)) {
-    config.antispamBantime = 1000;
-    console.log("ANTISPAM BAN TIME SET TO " + config.antispamBantime);
-}
-
 app.set('views', __dirname + '/tpl');
 app.set('view engine', "jade");
 app.engine('jade', require('jade').__express);
@@ -39,9 +30,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-import lobby = require("./Lobby");
 import player = require("./Player");
 import stateManager = require("./State");
+import game = require("./Game");
 
 var state = stateManager.globalState;
 
@@ -52,6 +43,7 @@ var sessions = {}
     players:[]
 }*/
 
+
 function randomStr(length:number): string {
     var data = "0123456789abcdefghijklmnoprstqvxyz";
     var result = "";
@@ -61,74 +53,64 @@ function randomStr(length:number): string {
     return result;
 }
 
+app.all("/*", function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "origin, content-type");
+    next();
+});
+
 
 app.get("/", filterMod, needLogin, function (req, res) {
     res.render("admin", state);
 });
 
-/*
-app.get("/emptyRoom", filterMod, needLogin, function (req, res) {
-    
-    res.header('Access-Control-Allow-Origin', "*");
-    res.header("Access-Control-Allow-Headers", "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With");
-    res.header("Access-Control-Allow-Methods", "GET, PUT, POST");
-
-    res.sendFile('public/empty_room_finder.html', { root: __dirname })
-});
-
-app.get("/client", function (req, res) {
-    res.render("client");
-});*/
-
-app.post("/api/changeAntispam", filterMod, needLogin, function (req, res) {
-    config.antispam = parseInt(req.body.antispam);
-    console.log("ANTISPAM SET TO " + config.antispam);
-
-    config.antispamBantime = parseInt(req.body.antispamBan);
-    console.log("ANTISPAM BAN TIME SET TO " + config.antispamBantime);
-
-    res.redirect("/");
-});
-
-
-app.post("/api/createLobby", filterMod, needLogin, function (req, res) {
-    var l = new lobby.Lobby();
-    l.name = req.body.name;
-    l.limit = parseInt(req.body.limit);
-    l.id = randomStr(8);
-
-    state.lobbyCreated(l);    
-
-    res.redirect("/");
-});
 
 var systemplayer = new player.Player();
 systemplayer.steamName = "SYSTEM";
 
-app.post("/api/joinGame", filterMod, needLogin, function (req, res) {
-    var l = state.getLobbyById(req.body.lobbyid);
-    var gameid = req.body.gameid;
-
-    log.info("Lobby " + l.name + " joining to game " + gameid);
-
-    l.broadcastChatMessage(systemplayer, "JOINING INTO ROOM " + gameid + "! GOOD LUCK!");
-
-    l.joinGame(gameid);
-    
-    res.redirect("/");
+app.get('/script', function (req, res) {
+    res.sendFile('public/MonsterLobby.user.js', { root: __dirname })
 });
 
-app.post("/api/changeLobbyState", filterMod, needLogin, function (req, res) {
-    var l = state.getLobbyById(req.body.lobbyid);
-    var gameid = req.body.gameid;
+app.post("/api/announcement", filterMod, needLogin, function (req, res) {
 
-    log.info("Lobby " + l.name + " changing state " + gameid);
+    state.announce(req.body.usr, req.body.msg);
 
-    l.broadcastChatMessage(systemplayer, "LOBBY ROOM SET TO " + gameid + "!");
+    res.json({ status: 'ok' });
+});
 
-    l.gameId = gameid;
-    l.lobbyStatus = lobby.LobbyState.GameInProgress;
-    state.updateLobbyDataObject();
+app.post("/api/joinGame", filterMod, needLogin, function (req, res) {
+
+    var joinList = [];
+
+    var playerCount = req.body.count;
+    var gameName = req.body.name;
+    var gameId = req.body.gameid;
+    var retryTime = req.body.retry;
+
+    for (var i = 0; i < state.players.length; i++) {
+        if (joinList.length >= playerCount) break;
+
+        var p = state.players[i];
+        if (p.playerSocket != null && p.state == player.PlayerState.Waiting) {
+            p.state = player.PlayerState.Selected;
+            joinList.push(p);
+        }
+    }
+
+    state.announce('SYSTEM', 'Randomly selected ' + joinList.length + ' players.');
+
+    var room: game.Game = state.getOrCreateGame(gameId);
+    room.name = gameName;
+    room.gameType = game.GameType.Offical;
+    state.saveGames();
+
+    state.announce('SYSTEM', 'Commencing join to room.');
+
+    for (var i = 0; i < joinList.length; i++) {
+        var p2 = joinList[i];
+        p2.joinGame(gameId, retryTime);
+    }
 
     res.redirect("/");
 });
@@ -163,7 +145,7 @@ app.get("/api/logs/:count", filterMod, needLogin, function (req, res) {
 });
 
 
-app.post("/api/login", function (req, res) {
+app.post("/api/login", filterMod, function (req, res) {
     if (req.body.password == config.adminPassword) {
         var sessionStr = randomStr(16);
         res.cookie("session", sessionStr);
@@ -173,10 +155,6 @@ app.post("/api/login", function (req, res) {
     }
 
     res.redirect("/?failed=1");
-});
-
-app.get("/admin/:page", filterMod, needLogin, function (req, res) {
-    res.render(req.params.page);
 });
 
 function needLogin(req, res, next) {
@@ -247,53 +225,8 @@ server.on('connection', function (socket: pollen.PollenSocket) {
         state.playerJoined(p);
         p.sendHello();
     });
-
-    socket.on('updateLobbies', function (data) {
-        var p = socket["player"];
-        if (p != null) {
-            state.sendLobbiesToPlayer(p);
-        }
-    });
-
-    socket.on('joinLobby', function (data) {
-        var p = socket["player"];
-        var lobbyId = data.id;
-        var lobby = state.getLobbyById(lobbyId);
-        var isJoined = state.joinPlayerToLobby(p, lobby);
-
-        if (isJoined) {
-            //socket.emit('joinedLobby', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
-            p.sendHello();
-        }
-        else {
-            socket.emit('lobbyFull', { id: lobby.id, name: lobby.name, limit: lobby.limit, count: lobby.players.length });
-        }
-    });
-
-    socket.on('leaveLobby', function (data) {
-        var p: player.Player = socket["player"];
-
-        if (p != null) {
-            p.leaveLobby();
-
-            // send lobbies back to user
-            state.sendLobbiesToPlayer(p);
-        };
-    });
-
-    socket.on('chat', function (data) {
-        if (server.loadFactor > 125) return;
-        var p: player.Player = socket["player"];
-        if (p != null) {
-            if (p.playerLobby != null) {
-                p.playerLobby.broadcastChatMessage(p, data.message);
-            }
-        }
-    });
-
     
     socket.on('heartbeat', function (data) {
-        if (server.loadFactor > 125 ) return;
         
         var p: player.Player = socket["player"];
         if (p != null) {
@@ -308,17 +241,21 @@ server.on('connection', function (socket: pollen.PollenSocket) {
                     else {
                         p.likenewCount = parseInt(data.likenews);
                         p.wormholeCount = parseInt(data.wormholes);
-                        if (p.playerLobby) {
-                            // it only fires every 5 sec dont worry
-                            p.playerLobby.countItems();
+                    }
+                }
+                
+                if (data.gameid !== "undefined") {
+                    if (validator.isInt(data.gameid)) {
+                        if (data.gameid == 0) {
+                            p.playerLeavedGame();
+                        }
+                        else {
+                            p.playerMadeIntoGame(parseInt(data.gameid));
                         }
                     }
                 }
-
-                if (typeof data.gameid !== "undefined") {
-                    p.currentPlayerGameId = data.gameid;
-                }
             }
+
             p.sendHello();
         }
     });

@@ -58,6 +58,7 @@ module.exports = function ipfilter(ips, opts) {
 
     var getClientIp = function(req) {
         var ipAddress = req.connection.remoteAddress;
+        if (ipAddress === "::1") return "127.0.0.1";
         if (ipAddress.indexOf('::ffff:') == 0)
             ipAddress = ipAddress.substr(7);
 
