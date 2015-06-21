@@ -604,7 +604,7 @@ color: darkorange;\
             }, 2000);
         }
         
-        socket.on('abandonGame', function (data) {
+        socket.on('leaveGame', function (data) {
             leaveCurrentGame();
         });
         
