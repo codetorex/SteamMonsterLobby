@@ -1,7 +1,7 @@
 
 console.log("Initializing lobby script...");
 
-var lobbyScriptVersion = '3.0.0';
+var lobbyScriptVersion = '3.0.1';
 
 //var server_address = 'http://localhost:3900';
 var server_address = 'http://188.166.36.23:3900';
@@ -447,7 +447,7 @@ color: darkorange;\
             if (data.state == 5) {
                 
                 if (isLeaveBar()) return;
-                console.log(lobbyList);
+                
                 var leaveBar = $('<div class="leaveBar" style="height:30px; margin: 5px 30px 10px 10px;"><button id="leaveButton" style="width:100%;">You are in wrong game! You must leave, click this!</button></div>');
                 
                 lobbyList.append(leaveBar);
@@ -459,7 +459,7 @@ color: darkorange;\
             
             if (data.state == 0 && checkInGame()) {
                 if (isLeaveBar()) return;
-                console.log(lobbyList);
+
                 var leaveBar = $('<div class="leaveBar" style="height:30px; margin: 5px 30px 10px 10px;"><button id="leaveButton" style="width:100%;">You better leave your game to join others, click this!</button></div>');
                 
                 lobbyList.append(leaveBar);
@@ -673,7 +673,7 @@ color: darkorange;\
         
         console.log("Game join informer start...");
         
-        lobbyStart2($, ".pagecontent");
+        lobbyStart2(".pagecontent");
         
         
         
