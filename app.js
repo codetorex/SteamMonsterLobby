@@ -25,10 +25,7 @@ var stateManager = require("./State");
 var game = require("./Game");
 var state = stateManager.globalState;
 var sessions = {};
-/*var state = {
-    lobbies: [],
-    players:[]
-}*/
+var debug = typeof v8debug === 'object';
 function randomStr(length) {
     var data = "0123456789abcdefghijklmnoprstqvxyz";
     var result = "";
@@ -47,9 +44,12 @@ app.get("/", filterMod, needLogin, function (req, res) {
 });
 var systemplayer = new player.Player();
 systemplayer.steamName = "SYSTEM";
-app.get('/script', function (req, res) {
-    res.sendFile('public/MonsterLobby.user.js', { root: __dirname });
-});
+if (debug) {
+    console.log("DEBUG MODE, ENABLING DEBUG SCRIPT HOST");
+    app.get('/script', function (req, res) {
+        res.sendFile('public/MonsterLobby.user.js', { root: __dirname });
+    });
+}
 app.post("/api/announcement", filterMod, needLogin, function (req, res) {
     state.announce(req.body.usr, req.body.msg);
     res.json({ status: 'ok' });
