@@ -1,7 +1,7 @@
 
 console.log("Initializing lobby script...");
 
-var lobbyScriptVersion = '3.0.0';
+var lobbyScriptVersion = '3.0.2';
 
 //var server_address = 'http://localhost:3900';
 var server_address = 'http://188.166.36.23:3900';
@@ -155,6 +155,9 @@ var lobbyRun = function ($) {
                 self.setSocketInterval(data.delay);
             });
         }
+        PollenClient.prototype.addPacket = function (event, data) {
+            this.packets.push({ event: event, data: data });
+        };
         PollenClient.prototype.emit = function (event, data) {
             if (!this.connected)
                 return;
@@ -223,18 +226,17 @@ var lobbyRun = function ($) {
         };
         PollenClient.prototype.connect = function (url) {
             this.url = url;
-            this.emit('connect');
+            this.addPacket('connect');
             this.request();
         };
         PollenClient.prototype.reconnect = function () {
             this.reconnecting = true;
             this.packets = [];
-            this.emit('connect');
+            this.addPacket('connect');
             this.request();
         };
         return PollenClient;
     })();
-    
 
     var lobbyList;
     var socket;

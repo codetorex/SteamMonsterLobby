@@ -164,6 +164,10 @@ class PollenClient {
     public connected: boolean = false;
     public reconnecting: boolean = false;
 
+    public addPacket(event: string, data?: any) {
+        this.packets.push({ event: event, data: data });
+    }
+
     public emit(event: string, data?: any) {
         if (!this.connected) return;
         this.packets.push({ event: event, data: data });
@@ -221,7 +225,9 @@ class PollenClient {
                     }
                 }
                 else {
-                    self.request();
+                    setTimeout(function () {
+                        self.request();
+                    }, 1000);
                 }
             });
     }
@@ -239,14 +245,15 @@ class PollenClient {
 
     public connect(url: string) {
         this.url = url;
-        this.emit('connect');
+        this.packets = [];
+        this.addPacket('connect');
         this.request();
     }
 
     public reconnect() {
         this.reconnecting = true;
         this.packets = [];
-        this.emit('connect');
+        this.addPacket('connect');
         this.request();
     }
 

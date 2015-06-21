@@ -145,6 +145,9 @@ var PollenClient = (function () {
             self.setSocketInterval(data.delay);
         });
     }
+    PollenClient.prototype.addPacket = function (event, data) {
+        this.packets.push({ event: event, data: data });
+    };
     PollenClient.prototype.emit = function (event, data) {
         if (!this.connected)
             return;
@@ -198,7 +201,9 @@ var PollenClient = (function () {
                 }
             }
             else {
-                self.request();
+                setTimeout(function () {
+                    self.request();
+                }, 1000);
             }
         });
     };
@@ -213,13 +218,14 @@ var PollenClient = (function () {
     };
     PollenClient.prototype.connect = function (url) {
         this.url = url;
-        this.emit('connect');
+        this.packets = [];
+        this.addPacket('connect');
         this.request();
     };
     PollenClient.prototype.reconnect = function () {
         this.reconnecting = true;
         this.packets = [];
-        this.emit('connect');
+        this.addPacket('connect');
         this.request();
     };
     return PollenClient;

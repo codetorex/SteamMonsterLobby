@@ -60,7 +60,7 @@ var PollenServer = (function (_super) {
                 sck.on('connect', function (data) {
                     sck.emit('connect', { resuming: true, delay: self.clientInterval });
                 });
-                sck.emit('connect', { resuming: false, delay: self.clientInterval });
+                //sck.emit('connect', { resuming: false , delay: self.clientInterval});
                 self.sockets[id] = sck;
                 self.emit('connection', sck);
             }
@@ -115,7 +115,7 @@ var PollenServer = (function (_super) {
             for (var s in self.sockets) {
                 var sck = self.sockets[s];
                 if (curDate - sck.lastRequest > 10000) {
-                    purgeList.push(sck.socketId);
+                    purgeList.push(s);
                 }
             }
             for (var i = 0; i < purgeList.length; i++) {
