@@ -1,7 +1,7 @@
 
 console.log("Initializing lobby script...");
 
-var lobbyScriptVersion = '3.0.2';
+var lobbyScriptVersion = '3.1.4';
 
 //var server_address = 'http://localhost:3900';
 var server_address = 'http://188.166.36.23:3900';
@@ -119,14 +119,19 @@ var lobbyRun = function ($) {
             var self = this;
             var xmlhttp = new XMLHttpRequest();
             xmlhttp.onload = function () {
+                self.isrequesting = false;
                 if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
                     callback(xmlhttp.responseText);
                 }
-                self.isrequesting = false;
             };
+            xmlhttp.timeout = timeout;
             xmlhttp.onerror = function () {
-                fail(xmlhttp);
                 self.isrequesting = false;
+                fail(xmlhttp);
+            };
+            xmlhttp.ontimeout = function () {
+                self.isrequesting = false;
+                fail(xmlhttp);
             };
             xmlhttp.open("POST", url, true);
             xmlhttp.setRequestHeader("Content-Type", "application/json");
@@ -190,6 +195,9 @@ var lobbyRun = function ($) {
             return result;
         };
         PollenClient.prototype.request = function () {
+            if (this.requester.isrequesting) {
+                return;
+            }
             var url = this.url;
             var body = JSON.stringify(this.packets);
             this.packets = [];
@@ -203,7 +211,7 @@ var lobbyRun = function ($) {
             }, function () {
                 if (self.reconnecting == false) {
                     if (self.connected) {
-                        self.internalEvents.emit('disconnected');
+                        self.internalEvents.emit('disconnect');
                         self.connected = false;
                     }
                     else {
@@ -211,6 +219,8 @@ var lobbyRun = function ($) {
                     }
                 }
                 else {
+                    self.packets = [];
+                    self.addPacket('connect');
                     self.request();
                 }
             });
@@ -226,6 +236,7 @@ var lobbyRun = function ($) {
         };
         PollenClient.prototype.connect = function (url) {
             this.url = url;
+            this.packets = [];
             this.addPacket('connect');
             this.request();
         };
@@ -237,6 +248,7 @@ var lobbyRun = function ($) {
         };
         return PollenClient;
     })();
+    
 
     var lobbyList;
     var socket;
