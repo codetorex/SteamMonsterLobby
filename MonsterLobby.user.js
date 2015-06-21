@@ -712,7 +712,7 @@ color: darkorange;\
     console.log(hasTower);
     if (hasTower > -1) {
         console.log("game informer starting");
-        gameInformer();
+        // gameInformer();
     }
     else {
         console.log("Lobby UI starting");
