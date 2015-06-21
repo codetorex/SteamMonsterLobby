@@ -53,16 +53,18 @@ app.post('/api/abandonGame', filterMod, needLogin, function (req, res) {
     for (var i = 0; i < state.players.length; i++) {
         var p = state.players[i];
         if (p.playerSocket != null) {
-            if (!p.ugly) {
-                p.leaveGame(retryTime);
-                p.announce("SYSTEM", "Abandoning this room.");
+            if (p.playerGame != null) {
+                if (!p.ugly && p.playerGame.roomId == gameId) {
+                    p.leaveGame(retryTime);
+                    p.announce("SYSTEM", "Abandoning this room.");
+                }
             }
         }
     }
     // soft abandon (let the players know they are in wrong game)
     var g = state.getGame(gameId);
     if (g) {
-        g.gameType = 0 /* Unoffical */;
+        g.gameType = game.GameType.Unoffical;
     }
     res.redirect("/");
 });
@@ -76,15 +78,15 @@ app.post("/api/joinGame", filterMod, needLogin, function (req, res) {
         if (joinList.length >= playerCount)
             break;
         var p = state.players[i];
-        if (p.playerSocket != null && p.state == 0 /* Waiting */ && !p.ugly) {
-            p.state = 1 /* Selected */;
+        if (p.playerSocket != null && p.state == player.PlayerState.Waiting && !p.ugly) {
+            p.state = player.PlayerState.Selected;
             joinList.push(p);
         }
     }
     state.announce('SYSTEM', 'Randomly selected ' + joinList.length + ' players.');
     var room = state.getOrCreateGame(gameId);
     room.name = gameName;
-    room.gameType = 1 /* Offical */;
+    room.gameType = game.GameType.Offical;
     state.saveGames();
     state.announce('SYSTEM', 'Commencing join to room.');
     for (var i = 0; i < joinList.length; i++) {

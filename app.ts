@@ -89,9 +89,11 @@ app.post('/api/abandonGame', filterMod, needLogin, function (req, res) {
     for (var i = 0; i < state.players.length; i++) {
         var p = state.players[i];
         if (p.playerSocket != null) {
-            if (!p.ugly) {
-                p.leaveGame(retryTime);
-                p.announce("SYSTEM" , "Abandoning this room.");
+            if (p.playerGame != null) {
+                if (!p.ugly && p.playerGame.roomId == gameId) {
+                    p.leaveGame(retryTime);
+                    p.announce("SYSTEM", "Abandoning this room.");
+                }
             }
         }
     }
