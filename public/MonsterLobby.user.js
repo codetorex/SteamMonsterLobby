@@ -366,7 +366,6 @@ color: darkorange;\
         socket.on('connect', function (data) {
             console.log("connected");
             
-            console.log(data);
             
             addChatMessage('SYSTEM', 'You are connected to the server.');
             
@@ -389,7 +388,7 @@ color: darkorange;\
                     hbdata = getHeartBeatData();
                 }
                 
-                console.log(hbdata);
+                
                 
                 socket.emit("heartbeat", hbdata);
             }, 4000);
@@ -448,7 +447,7 @@ color: darkorange;\
             if (data.state == 5) {
                 
                 if (isLeaveBar()) return;
-                console.log(lobbyList);
+                
                 var leaveBar = $('<div class="leaveBar" style="height:30px; margin: 5px 30px 10px 10px;"><button id="leaveButton" style="width:100%;">You are in wrong game! You must leave, click this!</button></div>');
                 
                 lobbyList.append(leaveBar);
@@ -460,7 +459,7 @@ color: darkorange;\
             
             if (data.state == 0 && checkInGame()) {
                 if (isLeaveBar()) return;
-                console.log(lobbyList);
+
                 var leaveBar = $('<div class="leaveBar" style="height:30px; margin: 5px 30px 10px 10px;"><button id="leaveButton" style="width:100%;">You better leave your game to join others, click this!</button></div>');
                 
                 lobbyList.append(leaveBar);
@@ -674,7 +673,7 @@ color: darkorange;\
         
         console.log("Game join informer start...");
         
-        lobbyStart2($, ".pagecontent");
+        lobbyStart2(".pagecontent");
         
         
         
