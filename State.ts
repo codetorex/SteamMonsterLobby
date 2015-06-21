@@ -129,13 +129,13 @@ export class StateManager {
                 }
             }
             else {
-                game.fetchGameDetails(g);
+                //game.fetchGameDetails(g);
             }
         }
 
-        if (deleted) {
-            this.saveGames();
-        }
+        
+        this.saveGames();
+        
 
         this.totalActivePlayers = actives;
         this.totalPlayersInGame = ingames;
@@ -155,7 +155,7 @@ export class StateManager {
             g = new game.Game();
             g.roomId = roomId;
             this.games[roomId] = g;
-            this.saveGames();
+            //this.saveGames();
         }
 
         return g;

@@ -73,10 +73,10 @@ var StateManager = (function () {
                 if (p.ugly) {
                     this.uglies++;
                 }
-                if (p.state == 3 /* Loading */) {
+                if (p.state == player.PlayerState.Loading) {
                     var afterTime = p.joinIssueStamp + p.joinTimeout;
                     if (time - afterTime > p.loadingTimeout) {
-                        p.state = 0 /* Waiting */;
+                        p.state = player.PlayerState.Waiting;
                         p.playerMustGame = null;
                     }
                 }
@@ -88,7 +88,7 @@ var StateManager = (function () {
         for (var key in this.games) {
             var g = this.games[key];
             g.estimatedKnown = tools.estimate(g.knownPlayerCount);
-            if (g.gameType == 0 /* Unoffical */) {
+            if (g.gameType == game.GameType.Unoffical) {
                 if (g.knownPlayerCount == 0) {
                     delete this.games[g.roomId];
                     deleted = true;
@@ -98,12 +98,9 @@ var StateManager = (function () {
                 }
             }
             else {
-                game.fetchGameDetails(g);
             }
         }
-        if (deleted) {
-            this.saveGames();
-        }
+        this.saveGames();
         this.totalActivePlayers = actives;
         this.totalPlayersInGame = ingames;
         this.estimatedActives = tools.estimate(actives);
@@ -119,7 +116,6 @@ var StateManager = (function () {
             g = new game.Game();
             g.roomId = roomId;
             this.games[roomId] = g;
-            this.saveGames();
         }
         return g;
     };
