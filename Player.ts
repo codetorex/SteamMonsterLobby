@@ -3,6 +3,7 @@
 import pollen = require('./Pollen');
 import state = require("./State");
 import game = require("./Game");
+import validator = require("validator");
 
 export enum PlayerState {
     Waiting,
@@ -30,7 +31,7 @@ export class Player {
     public playerMustGame: game.Game = null;
 
     public lastMessageTime: number;
-    public score: number;
+    public ugly: boolean = false;
 
     public joinIssueStamp: number;
     public joinTimeout: number = 150000; // time out as milliseconds
@@ -49,10 +50,23 @@ export class Player {
         this.playerSocket.emit("joinGame", { id: gameId });
     }
 
+    public leaveGame(timeout: number) {
+        this.playerSocket.emit('leaveGame', {});
+    }
+
     public playerLeavedGame() {
         if (this.playerGame != null) {
             this.playerGame = null;
             this.state = PlayerState.Waiting;
+        }
+    }
+
+    public announce(usr: string, msg: string) {
+
+        var data = { user: validator.escape(usr), message: validator.escape(msg) };
+
+        if (this.playerSocket != null) {
+            this.playerSocket.emit('announce', data);
         }
     }
 
@@ -70,7 +84,7 @@ export class Player {
         if (this.playerGame != null) {
             helloData['wormholes'] = this.playerGame.wormholeCount;
             helloData['likenews'] = this.playerGame.likenewCount;
-            helloData['brothers'] = this.playerGame.knownPlayerCount;
+            helloData['brothers'] = this.playerGame.estimatedKnown;
         }
         
         if (this.state == PlayerState.Joining) {
@@ -80,8 +94,8 @@ export class Player {
             }
         }
 
-        helloData['playerCount'] = state.globalState.totalActivePlayers;
-        helloData['playersInGame'] = state.globalState.totalPlayersInGame;
+        helloData['playerCount'] = state.globalState.estimatedActives;
+        helloData['playersInGame'] = state.globalState.estimatedInGames;
         
         this.playerSocket.emit("hello", helloData); // what do we need to update anyway?
     }

@@ -5,6 +5,7 @@ import game = require("./Game");
 import log = require('./Log');
 import validator = require("validator");
 import redis = require("redis");
+import tools = require('./Tools');
 
 export var db = redis.createClient();
 
@@ -21,7 +22,12 @@ export class StateManager {
     public totalActivePlayers: number = 0;
     public totalPlayersInGame: number = 0;
 
+    public estimatedActives: string = '';
+    public estimatedInGames: string = '';
+
     public unofficalGames: number = 0;
+
+    public uglies: number = 0;
 
     // steam id to player dictionary
     public steamPlayer = {};
@@ -68,6 +74,8 @@ export class StateManager {
         var actives = 0;
         var ingames = 0;
 
+        this.uglies = 0;
+
         for (var key in this.games) {
             var g = this.games[key];    
             g.likenewCount = 0;
@@ -87,6 +95,10 @@ export class StateManager {
                     ingames++;
                 }
 
+                if (p.ugly) {
+                    this.uglies++;
+                }
+
                 if (p.state == player.PlayerState.Loading) {
                     var afterTime = p.joinIssueStamp + p.joinTimeout;
                     if (time - afterTime > p.loadingTimeout) {
@@ -104,6 +116,9 @@ export class StateManager {
         var deleted = false;
         for (var key in this.games) {
             var g = this.games[key];
+
+
+            g.estimatedKnown = tools.estimate(g.knownPlayerCount);
             if (g.gameType == game.GameType.Unoffical) {
                 if (g.knownPlayerCount == 0) {
                     delete this.games[g.roomId];
@@ -113,6 +128,9 @@ export class StateManager {
                     this.unofficalGames++;
                 }
             }
+            else {
+                game.fetchGameDetails(g);
+            }
         }
 
         if (deleted) {
@@ -121,10 +139,13 @@ export class StateManager {
 
         this.totalActivePlayers = actives;
         this.totalPlayersInGame = ingames;
+
+        this.estimatedActives = tools.estimate(actives);
+        this.estimatedInGames = tools.estimate(ingames);
     }
 
     public getGame(roomId: number) {
-        var g = this.games['roomId'];
+        var g = this.games[roomId];
         return g;
     }
 

@@ -133,15 +133,24 @@ class XMLHttpRequester implements PollenRequester {
 
         var xmlhttp = new XMLHttpRequest();
         xmlhttp.onload = function () {
+            self.isrequesting = false;
             if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
                 callback(xmlhttp.responseText);
             }
-            self.isrequesting = false;
+            
         }
 
+        xmlhttp.timeout = timeout;
+
         xmlhttp.onerror = function () {
-            fail(xmlhttp);
             self.isrequesting = false;
+            fail(xmlhttp);
+            
+        }
+
+        xmlhttp.ontimeout = function () {
+            self.isrequesting = false;
+            fail(xmlhttp);
         }
 
         xmlhttp.open("POST", url, true);
@@ -204,6 +213,10 @@ class PollenClient {
     }
 
     public request() {
+        if (this.requester.isrequesting) {
+            return;
+        }
+
         var url = this.url;
         var body = JSON.stringify(this.packets);
         this.packets = [];
@@ -217,7 +230,7 @@ class PollenClient {
         }, function () {
                 if (self.reconnecting == false) {
                     if (self.connected) {
-                        self.internalEvents.emit('disconnected');
+                        self.internalEvents.emit('disconnect');
                         self.connected = false;
                     }
                     else {
@@ -225,9 +238,9 @@ class PollenClient {
                     }
                 }
                 else {
-                    setTimeout(function () {
-                        self.request();
-                    }, 1000);
+                    self.packets = [];
+                    self.addPacket('connect');
+                    self.request();
                 }
             });
     }

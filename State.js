@@ -4,6 +4,7 @@ var game = require("./Game");
 var log = require('./Log');
 var validator = require("validator");
 var redis = require("redis");
+var tools = require('./Tools');
 exports.db = redis.createClient();
 exports.db.on("error", function (err) {
     console.log("Error " + err);
@@ -14,7 +15,10 @@ var StateManager = (function () {
         this.games = {};
         this.totalActivePlayers = 0;
         this.totalPlayersInGame = 0;
+        this.estimatedActives = '';
+        this.estimatedInGames = '';
         this.unofficalGames = 0;
+        this.uglies = 0;
         // steam id to player dictionary
         this.steamPlayer = {};
         var self = this;
@@ -49,6 +53,7 @@ var StateManager = (function () {
     StateManager.prototype.recountEverything = function () {
         var actives = 0;
         var ingames = 0;
+        this.uglies = 0;
         for (var key in this.games) {
             var g = this.games[key];
             g.likenewCount = 0;
@@ -65,6 +70,9 @@ var StateManager = (function () {
                     p.playerGame.wormholeCount += p.wormholeCount;
                     ingames++;
                 }
+                if (p.ugly) {
+                    this.uglies++;
+                }
                 if (p.state == 3 /* Loading */) {
                     var afterTime = p.joinIssueStamp + p.joinTimeout;
                     if (time - afterTime > p.loadingTimeout) {
@@ -79,6 +87,7 @@ var StateManager = (function () {
         var deleted = false;
         for (var key in this.games) {
             var g = this.games[key];
+            g.estimatedKnown = tools.estimate(g.knownPlayerCount);
             if (g.gameType == 0 /* Unoffical */) {
                 if (g.knownPlayerCount == 0) {
                     delete this.games[g.roomId];
@@ -88,15 +97,20 @@ var StateManager = (function () {
                     this.unofficalGames++;
                 }
             }
+            else {
+                game.fetchGameDetails(g);
+            }
         }
         if (deleted) {
             this.saveGames();
         }
         this.totalActivePlayers = actives;
         this.totalPlayersInGame = ingames;
+        this.estimatedActives = tools.estimate(actives);
+        this.estimatedInGames = tools.estimate(ingames);
     };
     StateManager.prototype.getGame = function (roomId) {
-        var g = this.games['roomId'];
+        var g = this.games[roomId];
         return g;
     };
     StateManager.prototype.getOrCreateGame = function (roomId) {

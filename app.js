@@ -24,16 +24,9 @@ var player = require("./Player");
 var stateManager = require("./State");
 var game = require("./Game");
 var state = stateManager.globalState;
+var tools = require('./Tools');
 var sessions = {};
 var debug = typeof v8debug === 'object';
-function randomStr(length) {
-    var data = "0123456789abcdefghijklmnoprstqvxyz";
-    var result = "";
-    for (var i = 0; i < length; i++) {
-        result += data.charAt(Math.round(Math.random() * data.length));
-    }
-    return result;
-}
 app.all("/*", function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "origin, content-type");
@@ -54,6 +47,25 @@ app.post("/api/announcement", filterMod, needLogin, function (req, res) {
     state.announce(req.body.usr, req.body.msg);
     res.json({ status: 'ok' });
 });
+app.post('/api/abandonGame', filterMod, needLogin, function (req, res) {
+    var gameId = parseInt(req.body.gameid);
+    var retryTime = parseInt(req.body.retry);
+    for (var i = 0; i < state.players.length; i++) {
+        var p = state.players[i];
+        if (p.playerSocket != null) {
+            if (!p.ugly) {
+                p.leaveGame(retryTime);
+                p.announce("SYSTEM", "Abandoning this room.");
+            }
+        }
+    }
+    // soft abandon (let the players know they are in wrong game)
+    var g = state.getGame(gameId);
+    if (g) {
+        g.gameType = 0 /* Unoffical */;
+    }
+    res.redirect("/");
+});
 app.post("/api/joinGame", filterMod, needLogin, function (req, res) {
     var joinList = [];
     var playerCount = req.body.count;
@@ -64,7 +76,7 @@ app.post("/api/joinGame", filterMod, needLogin, function (req, res) {
         if (joinList.length >= playerCount)
             break;
         var p = state.players[i];
-        if (p.playerSocket != null && p.state == 0 /* Waiting */) {
+        if (p.playerSocket != null && p.state == 0 /* Waiting */ && !p.ugly) {
             p.state = 1 /* Selected */;
             joinList.push(p);
         }
@@ -102,7 +114,7 @@ app.get("/api/logs/:count", filterMod, needLogin, function (req, res) {
 });
 app.post("/api/login", filterMod, function (req, res) {
     if (req.body.password == config.adminPassword) {
-        var sessionStr = randomStr(16);
+        var sessionStr = tools.randomStr(16);
         res.cookie("session", sessionStr);
         sessions[sessionStr] = { login: true, ip: req.ip };
         res.redirect("/");

@@ -1,5 +1,6 @@
 var state = require("./State");
 var game = require("./Game");
+var validator = require("validator");
 (function (PlayerState) {
     PlayerState[PlayerState["Waiting"] = 0] = "Waiting";
     PlayerState[PlayerState["Selected"] = 1] = "Selected";
@@ -16,6 +17,7 @@ var Player = (function () {
         this.wormholeCount = 0;
         this.playerGame = null;
         this.playerMustGame = null;
+        this.ugly = false;
         this.joinTimeout = 150000; // time out as milliseconds
         this.loadingTimeout = 10000;
     }
@@ -27,10 +29,19 @@ var Player = (function () {
         this.joinIssueStamp = new Date().getTime();
         this.playerSocket.emit("joinGame", { id: gameId });
     };
+    Player.prototype.leaveGame = function (timeout) {
+        this.playerSocket.emit('leaveGame', {});
+    };
     Player.prototype.playerLeavedGame = function () {
         if (this.playerGame != null) {
             this.playerGame = null;
             this.state = 0 /* Waiting */;
+        }
+    };
+    Player.prototype.announce = function (usr, msg) {
+        var data = { user: validator.escape(usr), message: validator.escape(msg) };
+        if (this.playerSocket != null) {
+            this.playerSocket.emit('announce', data);
         }
     };
     Player.prototype.sendHello = function () {
@@ -44,7 +55,7 @@ var Player = (function () {
         if (this.playerGame != null) {
             helloData['wormholes'] = this.playerGame.wormholeCount;
             helloData['likenews'] = this.playerGame.likenewCount;
-            helloData['brothers'] = this.playerGame.knownPlayerCount;
+            helloData['brothers'] = this.playerGame.estimatedKnown;
         }
         if (this.state == 2 /* Joining */) {
             var curTime = new Date().getTime();
@@ -52,8 +63,8 @@ var Player = (function () {
                 this.state = 3 /* Loading */;
             }
         }
-        helloData['playerCount'] = state.globalState.totalActivePlayers;
-        helloData['playersInGame'] = state.globalState.totalPlayersInGame;
+        helloData['playerCount'] = state.globalState.estimatedActives;
+        helloData['playersInGame'] = state.globalState.estimatedInGames;
         this.playerSocket.emit("hello", helloData); // what do we need to update anyway?
     };
     Player.prototype.playerMadeIntoGame = function (gameid) {

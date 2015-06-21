@@ -51,9 +51,11 @@ html
 				div.list-group.games
 					each game, key in games
 						if game.gameType == 1
-							a.list-group-item.lobby(data-id=game.id)
+							a.list-group-item.lobby(data-id=game.roomId)
 								h4.list-group-item-heading=game.name
 								p.list-group-item-text
+									span Total Players
+									span.val.badge.btn-info=game.totalPlayerCount
 									span Known Players
 									span.val.badge.btn-info=game.knownPlayerCount
 									span Wormholes 
@@ -69,7 +71,27 @@ html
 								button.btn.btn-danger.abandoner(type="button") Abandon
 
 				h4 Current Unoffical Games
-					span.val.badge.btn-info=unofficalGames
+				div.list-group.games
+					each game, key in games
+						if game.gameType == 0
+							a.list-group-item.lobby(data-id=game.roomId)
+								h4.list-group-item-heading=game.name
+								p.list-group-item-text
+									span Total Players
+									span.val.badge.btn-info=game.totalPlayerCount
+									span Known Players
+									span.val.badge.btn-info=game.knownPlayerCount
+									span Wormholes 
+									span.val.badge.btn-info=game.wormholeCount
+									span Likenews 
+									span.val.badge.btn-info=game.likenewCount
+									span Game Id 
+									span.val.badge.btn-info=game.roomId
+									span Game Level 
+									span.val.badge.btn-info=game.level
+									span Game Type 
+									span.val.badge.btn-info=game.gameType
+								button.btn.btn-danger.abandoner(type="button") Abandon
 
 
 
@@ -134,9 +156,11 @@ html
 				}
 
 				$('.abandoner').click(function(){
-					var gm = $(this).closest('.lobby');
+					var gm = $(this).closest('a');
+					console.log(gm);
 					var gmId = parseInt( gm.attr('data-id') );
-					apicall('kickall', { gameid: gmId } );
+					console.log(gmId);
+					apicall('abandonGame', { gameid: gmId } );
 				});
 
 
